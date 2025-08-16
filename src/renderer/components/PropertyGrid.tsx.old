@@ -1,0 +1,710 @@
+// src/renderer/components/PropertyGrid.tsx
+import React from "react";
+import {
+  Box,
+  Checkbox,
+  IconButton,
+  Menu,
+  MenuItem,
+  MenuList,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
+  Paper,
+  ListItemText,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight"; // collapsed
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";     // expanded
+import AddIcon from "@mui/icons-material/Add";                    // array/object add
+import ClearIcon from "@mui/icons-material/Clear";                // array clear
+import RemoveIcon from "@mui/icons-material/Remove";              // delete (array elem / optional prop)
+
+/* ---------- Típusok ---------- */
+
+export type JSONSchema =
+  | {
+      type?: "object";
+      title?: string;
+      description?: string;
+      properties?: Record<string, JSONSchema>;
+      required?: string[];
+    }
+  | {
+      type?: "array";
+      title?: string;
+      description?: string;
+      items?: JSONSchema;
+    }
+  | {
+      type?: "string" | "number" | "integer" | "boolean" | "null";
+      title?: string;
+      description?: string;
+      enum?: Array<string | number | boolean | null>;
+      default?: any;
+      format?: string;
+    }
+  | { [key: string]: any };
+
+type Primitive = string | number | boolean | null;
+
+export interface PropertyGridProps {
+  value: any;
+  schema?: JSONSchema;
+  onChange?: (next: any) => void;
+  readOnly?: boolean;
+  /** hide = ikonok eltűnnek, disable = ikonok látszanak, de tiltva */
+  readOnlyControlsMode?: "hide" | "disable";
+  dense?: boolean;
+  summaryMaxLen?: number;
+  expanderColWidth?: number;
+  titleColWidth?: number | string;
+  /** MUI spacing egység; 1 egység = 8px */
+  indentStep?: number;
+
+  /** Dinamikus Title-oszlop */
+  autoTitleWidth?: boolean;
+  minTitleColWidth?: number; // px
+  maxTitleColWidth?: number; // px
+  titlePadding?: number;     // px
+}
+
+/* ---------- Utilok ---------- */
+
+const isObject = (v: any) => v !== null && typeof v === "object" && !Array.isArray(v);
+const isArray = (v: any) => Array.isArray(v);
+
+function inferType(v: any): JSONSchema["type"] {
+  if (isArray(v)) return "array";
+  if (isObject(v)) return "object";
+  if (v === null) return "null";
+  switch (typeof v) {
+    case "string": return "string";
+    case "number": return Number.isInteger(v) ? "integer" : "number";
+    case "boolean": return "boolean";
+    default: return undefined;
+  }
+}
+
+function toOneLineString(value: any, maxLen = 2000): string {
+  try {
+    const s = typeof value === "string" ? value : JSON.stringify(value);
+    if (s.length <= maxLen) return s;
+    return s.slice(0, maxLen - 3) + "...";
+  } catch { return String(value); }
+}
+
+function getChildSchema(parentSchema: JSONSchema | undefined, key: string | number): JSONSchema | undefined {
+  if (!parentSchema) return undefined;
+  const t = (parentSchema as any).type ?? undefined;
+  if (t === "object") {
+    const props = (parentSchema as any).properties;
+    if (props && typeof key === "string") return props[key];
+  }
+  if (t === "array") return (parentSchema as any).items;
+  return undefined;
+}
+
+type Path = Array<string | number>;
+function pathKey(path: Path): string { return path.map((p) => String(p)).join("."); }
+function getAtPath(root: any, path: Path): any {
+  let cur = root; for (const p of path) { if (cur == null) return undefined; cur = cur[p as any]; } return cur;
+}
+function updateAtPath(root: any, path: Path, nextValue: any): any {
+  if (path.length === 0) return nextValue;
+  const [head, ...tail] = path;
+  if (Array.isArray(root)) {
+    const idx = Number(head);
+    const clone = root.slice();
+    clone[idx] = updateAtPath(root[idx], tail, nextValue);
+    return clone;
+  }
+  const clone = { ...(root ?? {}) };
+  clone[head as any] = updateAtPath(root?.[head as any], tail, nextValue);
+  return clone;
+}
+
+/** Közös, keret nélküli, egysoros input stílus */
+const compactInputSx = {
+  px: 0, py: 0, m: 0,
+  "& .MuiInputBase-input, & .MuiSelect-select": {
+    px: 0, py: 0, lineHeight: 1.75, fontSize: "0.875rem",
+  },
+};
+
+/** ColGroup — egységes oszlopszélességek minden szinten */
+const ColGroup: React.FC<{ expander: number; title: number | string }> = ({ expander, title }) => {
+  const titleWidth = typeof title === "number" ? `${title}px` : title;
+  return (
+    <colgroup>
+      <col style={{ width: `${expander}px` }} />
+      <col style={{ width: titleWidth }} />
+      <col />
+    </colgroup>
+  );
+};
+
+/** Schema bejárás — a leghosszabb title méréséhez (indexek nélkül) */
+function collectTitlesFromSchema(schema?: JSONSchema): string[] {
+  const out: string[] = [];
+  const visit = (s?: JSONSchema) => {
+    if (!s) return;
+    const t = (s as any).type as JSONSchema["type"] | undefined;
+    if (t === "object") {
+      const props = (s as any).properties ?? {};
+      for (const k of Object.keys(props)) {
+        const child = props[k] as JSONSchema;
+        const label = (child as any).title ?? k;
+        out.push(String(label));
+        visit(child);
+      }
+    } else if (t === "array") {
+      visit((s as any).items as JSONSchema | undefined);
+    }
+  };
+  visit(schema);
+  return out;
+}
+
+/** Szöveg px-szélesség mérése canvas-szal a body2 tipográfiával */
+function measureMaxTitlePx(titles: string[], fontFamily: string, fontSizePx: number, fontWeight?: number | string): number {
+  if (titles.length === 0) return 0;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d"); if (!ctx) return 0;
+  const weight = typeof fontWeight === "number" || typeof fontWeight === "string" ? String(fontWeight) : "400";
+  ctx.font = `${weight} ${Math.round(fontSizePx)}px ${fontFamily}`;
+  let max = 0; for (const s of titles) { const w = ctx.measureText(s).width; if (w > max) max = w; }
+  return Math.ceil(max);
+}
+
+function describeType(schema: JSONSchema | undefined, value: any): string {
+  const t = (schema as any)?.type ?? inferType(value);
+  if (t === "array") {
+    const itemT = (schema as any)?.items && (schema as any).items.type;
+    return `array<${itemT ?? "any"}>`;
+  }
+  return String(t ?? "unknown");
+}
+
+/** Alapérték új elemhez a schema alapján */
+function defaultForSchema(s?: JSONSchema): any {
+  if (!s) return null;
+  const t = (s as any).type;
+  if (t === "object") {
+    const props = (s as any).properties ?? {};
+    const obj: any = {};
+    for (const k of Object.keys(props)) obj[k] = defaultForSchema(props[k]);
+    return obj;
+  }
+  if (t === "array") return (s as any).default ?? [];
+  if (t === "string") return (s as any).default ?? "";
+  if (t === "integer" || t === "number") return (s as any).default ?? 0;
+  if (t === "boolean") return (s as any).default ?? false;
+  if (t === "null") return null;
+  return (s as any).default ?? null;
+}
+
+/* ---------- Value Editor ---------- */
+
+interface ValueEditorProps { schema?: JSONSchema; value: Primitive; onChange: (v: Primitive) => void; readOnly?: boolean; dense?: boolean; }
+const ValueEditor: React.FC<ValueEditorProps> = React.memo(({ schema, value, onChange, readOnly, dense }) => {
+  const t = (schema as any)?.type ?? inferType(value);
+
+  const renderRO = () => (
+    <Typography variant="body2" sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={toOneLineString(value)}>
+      {toOneLineString(value)}
+    </Typography>
+  );
+
+  const enumVals = (schema as any)?.enum as Primitive[] | undefined;
+  if (enumVals) {
+    if (readOnly) return renderRO();
+    return (
+      <TextField
+        select
+        value={value as any}
+        onChange={(e) => onChange((e.target as HTMLInputElement).value as any)}
+        fullWidth
+        variant="standard"
+        InputProps={{ disableUnderline: true, sx: compactInputSx }}
+        SelectProps={{ displayEmpty: true }}
+      >
+        {enumVals.map((opt, i) => (
+          <MenuItem key={i} value={opt as any}>{String(opt)}</MenuItem>
+        ))}
+      </TextField>
+    );
+  }
+
+  switch (t) {
+    case "boolean":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", height: "1.75rem" }}>
+          <Checkbox size="small" disabled={!!readOnly} checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} sx={{ p: 0, m: 0 }} />
+        </Box>
+      );
+    case "number":
+    case "integer":
+      if (readOnly) return renderRO();
+      return (
+        <TextField
+          variant="standard"
+          InputProps={{ disableUnderline: true, sx: compactInputSx }}
+          type="number"
+          value={value ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (raw === "") return onChange(null);
+            const num = t === "integer" ? parseInt(raw, 10) : parseFloat(raw);
+            onChange(Number.isNaN(num) ? (null as any) : num);
+          }}
+          fullWidth
+          inputProps={t === "integer" ? { step: 1 } : undefined}
+        />
+      );
+    case "string":
+      if (readOnly) return renderRO();
+      return <TextField variant="standard" InputProps={{ disableUnderline: true, sx: compactInputSx }} value={value ?? ""} onChange={(e) => onChange(e.target.value)} fullWidth />;
+    case "null":
+      return <Typography variant="body2" sx={{ fontStyle: "italic", opacity: 0.7 }}>null</Typography>;
+    default:
+      return renderRO();
+  }
+});
+ValueEditor.displayName = "ValueEditor";
+
+/* ---------- Egy csomópont ---------- */
+
+interface NodeRowProps {
+  fieldKey: string | number;  // kulcs / index
+  label: string;              // megjelenített címke (schema.title || key)
+  value: any;
+  schema?: JSONSchema;
+  path: Path;
+  expanded: Record<string, boolean>;
+  setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  onChange?: (next: any) => void;
+  readOnly?: boolean;
+  readOnlyControlsMode?: "hide" | "disable";
+  dense?: boolean;
+  summaryMaxLen: number;
+  expanderColWidth: number;
+  titleColWidth: number | string;
+  currentIndent: number;
+  indentStep: number;
+  isRequired?: boolean;
+  isArrayElement?: boolean;
+}
+const NodeRow: React.FC<NodeRowProps> = ({
+  fieldKey, label, value, schema, path, expanded, setExpanded, onChange, readOnly, readOnlyControlsMode = "hide",
+  dense, summaryMaxLen, expanderColWidth, titleColWidth, currentIndent, indentStep, isRequired, isArrayElement,
+}) => {
+  const type = (schema as any)?.type ?? inferType(value);
+  const isComplex = type === "object" || type === "array";
+  const isArrayType = type === "array";
+  const isObjectType = type === "object";
+  const key = pathKey(path);
+  const isOpen = !!expanded[key];
+
+  const valueRootRef = (NodeRow as any)._valueRootRef as React.MutableRefObject<any>;
+
+  const toggle = () => setExpanded((s) => ({ ...s, [key]: !s[key] }));
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  const controlsHidden = !!readOnly && readOnlyControlsMode === "hide";
+  const controlsDisabled = !!readOnly && readOnlyControlsMode === "disable";
+
+  // --- OBJECT szint: hiányzó opcionális mezők gyűjtése + hozzáadás menü ---
+  const objProps = (schema as any)?.properties ?? {};
+  const reqList: string[] = Array.isArray((schema as any)?.required) ? (schema as any)?.required : [];
+  const objValue: any = isObjectType ? (isObject(value) ? value : {}) : undefined;
+
+  const missingOptionalKeys: string[] = React.useMemo(() => {
+    if (!isObjectType) return [];
+    const present = new Set(Object.keys(objValue ?? {}));
+    return Object.keys(objProps).filter((k) => !reqList.includes(k) && !present.has(k));
+  }, [isObjectType, objProps, objValue, reqList]);
+
+  const [addMenuAnchor, setAddMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const openAddMenu = (e: React.MouseEvent<HTMLElement>) => { e.stopPropagation(); if (controlsDisabled) return; setAddMenuAnchor(e.currentTarget); };
+  const closeAddMenu = () => setAddMenuAnchor(null);
+
+  const handleAddOptionalProp = (propKey: string) => {
+    if (controlsDisabled || readOnly) return;
+    const root = valueRootRef.current;
+    const currentObj = isObject(getAtPath(root, path)) ? getAtPath(root, path) : {};
+    const childSchema = (schema as any)?.properties?.[propKey] as JSONSchema | undefined;
+    const nextObj = { ...currentObj, [propKey]: defaultForSchema(childSchema) };
+    onChange?.(updateAtPath(root, path, nextObj));
+    closeAddMenu();
+  };
+
+  // --- Lista műveletek ---
+  const handleArrayAdd = (e: React.MouseEvent) => {
+    e.stopPropagation(); if (controlsDisabled || readOnly) return;
+    const root = valueRootRef.current;
+    const arr = Array.isArray(value) ? value : [];
+    const newItem = defaultForSchema((schema as any)?.items);
+    onChange?.(updateAtPath(root, path, [...arr, newItem]));
+  };
+  const handleArrayClear = (e: React.MouseEvent) => {
+    e.stopPropagation(); if (controlsDisabled || readOnly) return;
+    const root = valueRootRef.current;
+    onChange?.(updateAtPath(root, path, []));
+  };
+
+  // --- Tömb-elem törlése ---
+  const handleDeleteSelfFromArray = (e: React.MouseEvent) => {
+    e.stopPropagation(); if (controlsDisabled || !isArrayElement || readOnly) return;
+    const root = valueRootRef.current;
+    const parentPath = path.slice(0, -1);
+    const idx = Number(path[path.length - 1]);
+    const parentArr: any[] = Array.isArray(getAtPath(root, parentPath)) ? getAtPath(root, parentPath) : [];
+    const next = parentArr.slice(); next.splice(idx, 1);
+    onChange?.(updateAtPath(root, parentPath, next));
+  };
+
+  // --- Opcionális objektum-mező törlése ---
+  const parentIsObject = !isArrayElement && path.length > 0; // root nem mező
+  const canDeleteOptionalProp = parentIsObject && !isRequired;
+  const handleDeleteOptionalProp = (e: React.MouseEvent) => {
+    e.stopPropagation(); if (controlsDisabled || !canDeleteOptionalProp || readOnly) return;
+    const root = valueRootRef.current;
+    const parentPath = path.slice(0, -1);
+    const parentObj = getAtPath(root, parentPath) ?? {};
+    const clone = { ...(parentObj ?? {}) };
+    delete clone[String(fieldKey)];
+    onChange?.(updateAtPath(root, parentPath, clone));
+  };
+
+  // Title tooltip
+  const titleTooltip = (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+      <Typography variant="subtitle2" sx={{ m: 0, lineHeight: 1.4 }}>{label}</Typography>
+      <Typography variant="caption" sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", opacity: 0.9 }}>
+        name: {String(fieldKey)}
+      </Typography>
+      <Typography variant="caption" sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", opacity: 0.9 }}>
+        type: {describeType(schema, value)}
+      </Typography>
+      <Typography variant="caption" sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", opacity: 0.9 }}>
+        required: {isRequired ? "igen" : "nem"}
+      </Typography>
+      {(schema as any)?.description ? (
+        <Typography variant="caption" sx={{ whiteSpace: "pre-wrap", mt: 0.25 }}>
+          {(schema as any).description}
+        </Typography>
+      ) : null}
+    </Box>
+  );
+
+  const renderParentValue = () => {
+    if (!isComplex) {
+      return (
+        <ValueEditor
+          schema={schema}
+          value={value as Primitive}
+          onChange={(nv) => {
+            const root = valueRootRef.current;
+            onChange?.(updateAtPath(root, path, nv));
+          }}
+          readOnly={readOnly}
+          dense={dense}
+        />
+      );
+    }
+    const oneLine = toOneLineString(value, 2000);
+    const pretty = (() => { try { return JSON.stringify(value, null, 2); } catch { return String(value); } })();
+    return (
+      <Tooltip
+        arrow
+        componentsProps={{ tooltip: { sx: { maxWidth: 600, p: 1 } } }}
+        title={<Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: "0.8125rem" }}>{pretty}</Box>}
+      >
+        <Typography variant="body2" sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.75 }} title={oneLine}>
+          {oneLine}
+        </Typography>
+      </Tooltip>
+    );
+  };
+
+  // Gyerekek
+  let children: Array<{ k: string | number; v: any; s?: JSONSchema; r?: boolean; isArrEl?: boolean }> = [];
+  if (isComplex) {
+    if (isObjectType) {
+      const obj = objValue ?? {};
+      const props = objProps;
+      const req = reqList;
+      // csak a meglévő kulcsok + a kötelezők jelennek meg
+      const presentKeys = Object.keys(obj);
+      const keysToShow = Array.from(new Set<string>([...presentKeys, ...req]));
+      children = keysToShow.map((k) => ({
+        k,
+        v: obj?.[k],
+        s: getChildSchema(schema, k),
+        r: req.includes(k),
+        isArrEl: false,
+      }));
+    } else if (isArrayType) {
+      const arr: any[] = Array.isArray(value) ? value : [];
+      children = arr.map((_, idx) => ({
+        k: idx,
+        v: arr[idx],
+        s: getChildSchema(schema, idx),
+        r: false,
+        isArrEl: true,
+      }));
+    }
+  }
+
+  return (
+    <>
+      <TableRow hover>
+        {/* Expander */}
+        <TableCell sx={{ width: expanderColWidth, p: dense ? 0.5 : 1, verticalAlign: "top", minWidth: expanderColWidth }}>
+          {isComplex ? (
+            <IconButton size="small" onClick={toggle} aria-label={isOpen ? "Collapse" : "Expand"} title={isOpen ? "Collapse" : "Expand"} sx={{ p: 0.25 }}>
+              {isOpen ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+            </IconButton>
+          ) : (
+            <Box sx={{ width: 18, height: 24 }} />
+          )}
+        </TableCell>
+
+        {/* Title cella: grid 1fr auto, * jelölés kötelezőnél */}
+        <TableCell sx={{ p: dense ? 0.5 : 1, verticalAlign: "top", borderRight: 1, borderColor: "divider", minWidth: 0 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", columnGap: 0.5, minWidth: 0 }}>
+            {/* Bal: cím + * */}
+            <Tooltip arrow title={titleTooltip}>
+              <Box sx={{ display: "inline-flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
+                <Typography variant="body2" noWrap sx={{ lineHeight: 1.75, cursor: "help", minWidth: 0 }} title={label}>
+                  {label}
+                </Typography>
+                {isRequired && (
+                  <Box component="span" sx={{ color: "error.main", ml: 0.5, fontWeight: 700, lineHeight: 1 }}>
+                    *
+                  </Box>
+                )}
+              </Box>
+            </Tooltip>
+
+            {/* Jobb: ikonok */}
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.25, flexShrink: 0, whiteSpace: "nowrap" }} onMouseDown={stop}>
+              {/* OBJECT: hiányzó opcionális mezők hozzáadása (+ menü) */}
+              {!controlsHidden && isObjectType && missingOptionalKeys.length > 0 && (
+                <>
+                  <Tooltip title={controlsDisabled ? "" : "Hiányzó opcionális mező hozzáadása"}>
+                    <span>
+                      <IconButton size="small" onClick={openAddMenu} sx={{ p: 0.25 }} disabled={controlsDisabled}>
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Menu anchorEl={addMenuAnchor} open={!!addMenuAnchor} onClose={closeAddMenu} onClick={(e) => e.stopPropagation()}>
+                    <MenuList dense>
+                      {missingOptionalKeys.map((k) => {
+                        const s = (schema as any)?.properties?.[k] as JSONSchema | undefined;
+                        const lbl = (s as any)?.title ?? k;
+                        const tp = describeType(s, undefined);
+                        return (
+                          <MenuItem key={k} onClick={() => handleAddOptionalProp(k)}>
+                            <ListItemText primary={lbl} secondary={tp} />
+                          </MenuItem>
+                        );
+                      })}
+                    </MenuList>
+                  </Menu>
+                </>
+              )}
+
+              {/* ARRAY: elem hozzáadás / lista ürítés */}
+              {!controlsHidden && isArrayType && (
+                <>
+                  <Tooltip title={controlsDisabled ? "" : "Elem hozzáadása"}>
+                    <span>
+                      <IconButton size="small" onClick={handleArrayAdd} sx={{ p: 0.25 }} disabled={controlsDisabled}>
+                        <AddIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={controlsDisabled ? "" : "Lista ürítése"}>
+                    <span>
+                      <IconButton size="small" onClick={handleArrayClear} sx={{ p: 0.25 }} disabled={controlsDisabled}>
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </>
+              )}
+
+              {/* TÖMB-ELEM törlése */}
+              {!controlsHidden && isArrayElement && (
+                <Tooltip title={controlsDisabled ? "" : "Elem törlése"}>
+                  <span>
+                    <IconButton size="small" onClick={handleDeleteSelfFromArray} sx={{ p: 0.25 }} disabled={controlsDisabled}>
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+
+              {/* OPCIONÁLIS OBJEKTUM-MEZŐ törlése */}
+              {!controlsHidden && canDeleteOptionalProp && (
+                <Tooltip title={controlsDisabled ? "" : "Mező törlése (nem kötelező)"}>
+                  <span>
+                    <IconButton size="small" onClick={handleDeleteOptionalProp} sx={{ p: 0.25 }} disabled={controlsDisabled}>
+                      <RemoveIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+        </TableCell>
+
+        {/* Value */}
+        <TableCell sx={{ p: dense ? 0.5 : 1, verticalAlign: "top", minWidth: 0 }}>
+          {renderParentValue()}
+        </TableCell>
+      </TableRow>
+
+      {/* Expanded gyerek grid */}
+      {isComplex && isOpen && (
+        <TableRow>
+          <TableCell colSpan={3} sx={{ p: 0 }}>
+            <Box sx={{ pl: currentIndent + indentStep }}>
+              <Table size={dense ? "small" : "medium"} sx={{ tableLayout: "fixed", width: "100%" }}>
+                <ColGroup expander={expanderColWidth} title={titleColWidth} />
+                <TableBody>
+                  {children.map((child) => {
+                    const childPath = [...path, child.k];
+                    const childLabel = (child.s as any)?.title ?? String(child.k);
+                    return (
+                      <NodeRow
+                        key={pathKey(childPath)}
+                        fieldKey={child.k}
+                        label={childLabel}
+                        value={child.v}
+                        schema={child.s}
+                        path={childPath}
+                        expanded={expanded}
+                        setExpanded={setExpanded}
+                        onChange={onChange}
+                        readOnly={readOnly}
+                        readOnlyControlsMode={readOnlyControlsMode}
+                        dense={dense}
+                        summaryMaxLen={summaryMaxLen}
+                        expanderColWidth={expanderColWidth}
+                        titleColWidth={titleColWidth}
+                        currentIndent={currentIndent + indentStep}
+                        indentStep={indentStep}
+                        isRequired={!!child.r}
+                        isArrayElement={!!child.isArrEl}
+                      />
+                    );
+                  })}
+                  {children.length === 0 && (
+                    <TableRow>
+                      <TableCell sx={{ width: expanderColWidth }} />
+                      <TableCell sx={{ borderRight: 1, borderColor: "divider", minWidth: 0 }} />
+                      <TableCell sx={{ p: dense ? 0.5 : 1 }}>
+                        <Typography variant="body2" sx={{ opacity: 0.6, fontStyle: "italic" }}>(nincs tartalom)</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Box>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+};
+
+/* ---------- Fő komponens ---------- */
+
+export const PropertyGrid: React.FC<PropertyGridProps> = ({
+  value,
+  schema,
+  onChange,
+  readOnly,
+  readOnlyControlsMode = "hide",
+  dense,
+  summaryMaxLen = 160,
+  expanderColWidth = 40,
+  titleColWidth = 320,
+  indentStep = 28, // MUI spacing egység (28 -> 224px)
+  autoTitleWidth = true,
+  minTitleColWidth = 160,
+  maxTitleColWidth = 640,
+  titlePadding = 24,
+}) => {
+  const theme = useTheme();
+
+  // Dinamikus Title-szélesség (px)
+  const [autoTitlePx, setAutoTitlePx] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (!autoTitleWidth || !schema) { setAutoTitlePx(null); return; }
+    const titles = collectTitlesFromSchema(schema);
+    if (titles.length === 0) { setAutoTitlePx(null); return; }
+    const fontFamily = theme.typography.fontFamily || "Roboto, Helvetica, Arial, sans-serif";
+    const rootFontPx = parseFloat(getComputedStyle(document.documentElement).fontSize || "16");
+    const body2Size = theme.typography.body2?.fontSize || "0.875rem";
+    const sizePx =
+      typeof body2Size === "number" ? body2Size :
+      body2Size.endsWith("rem") ? parseFloat(body2Size) * rootFontPx :
+      body2Size.endsWith("px") ? parseFloat(body2Size) : 14;
+    const weight = theme.typography.body2?.fontWeight ?? theme.typography.fontWeightRegular ?? 400;
+    const maxTextPx = measureMaxTitlePx(titles, fontFamily, Number(sizePx), weight);
+    const widthPx = Math.min(Math.max(maxTextPx + titlePadding, minTitleColWidth), maxTitleColWidth);
+    setAutoTitlePx(widthPx);
+  }, [schema, autoTitleWidth, minTitleColWidth, maxTitleColWidth, titlePadding, theme]);
+
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+  const valueRootRef = React.useRef<any>(value);
+  valueRootRef.current = value;
+  (NodeRow as any)._valueRootRef = valueRootRef;
+
+  const effectiveTitleColWidth: number | string = autoTitlePx ?? titleColWidth;
+
+  // Mindig egy legfelső szintű sor: a séma title-je, tartalma a teljes objektum
+  const rootLabel = (schema as any)?.title ?? "(root)";
+
+  return (
+    <TableContainer component={Paper} elevation={0} sx={{ border: 1, borderColor: "divider", borderRadius: 1, overflowX: "hidden" }}>
+      <Table size={dense ? "small" : "medium"} sx={{ tableLayout: "fixed", width: "100%" }}>
+        <ColGroup expander={expanderColWidth} title={effectiveTitleColWidth} />
+        <TableBody>
+          <NodeRow
+            fieldKey={"(root)"}
+            label={rootLabel}
+            value={value}
+            schema={schema}
+            path={[]}
+            expanded={expanded}
+            setExpanded={setExpanded}
+            onChange={onChange}
+            readOnly={readOnly}
+            readOnlyControlsMode={readOnlyControlsMode}
+            dense={dense}
+            summaryMaxLen={summaryMaxLen}
+            expanderColWidth={expanderColWidth}
+            titleColWidth={effectiveTitleColWidth}
+            currentIndent={0}
+            indentStep={indentStep}
+            isRequired={false}
+            isArrayElement={false}
+          />
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+
+export default PropertyGrid;

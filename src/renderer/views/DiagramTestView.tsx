@@ -1,0 +1,13 @@
+import React from "react";
+import { Box } from "@mui/material";
+import { DiagramEditor } from "../components/diagram";
+
+const DiagramTestView: React.FC = () => {
+  return (
+    <Box sx={{ width: "100%", height: "100vh" }}>
+      <DiagramEditor />
+    </Box>
+  );
+};
+
+export default DiagramTestView;

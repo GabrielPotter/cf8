@@ -1,0 +1,43 @@
+html, body, #root { height: 100%; }
+
+#app-root {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
+.activity-bar {
+  background: #252526;
+  border-right: 1px solid #2d2d2d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 6px;
+}
+
+.activity-bar-bottom {
+  margin-top: auto;
+  margin-bottom: 4px;
+}
+
+.view-area {
+  background: #1e1e1e;
+  height: 100%;
+  overflow: hidden;
+}
+
+.viewstack-panel[hidden] {
+  display: none !important;
+}
+
+.cm-scroller {
+  /* kényszerített monospace, hogy minden karakter (pl. {}) biztosan jól renderelődjön */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "DejaVu Sans Mono", "Ubuntu Mono", "Courier New", monospace !important;
+}
+.cm-content {
+  font-variant-ligatures: none; /* ligatúrák ki, nehogy eltűnjön bármelyik jel */
+}

@@ -1,0 +1,36 @@
+cf8/
+├─ package.json
+├─ tsconfig.json
+├─ tsconfig.main.json
+├─ vite.config.ts
+├─ .gitignore
+├─ README.md
+└─ src/
+   ├─ main/
+   │  ├─ main.ts
+   │  └─ ipc.ts
+   ├─ preload/
+   │  └─ preload.ts
+   ├─ windows/
+   │  ├─ createWindow.ts
+   │  └─ windows.ts
+   ├─ workers/
+   │  └─ catalogWorker.ts
+   ├─ shared/
+   │  ├─ types.ts
+   │  └─ global.d.ts
+   └─ renderer/
+      ├─ index.html
+      ├─ main.tsx
+      ├─ App.tsx
+      ├─ theme.ts
+      ├─ styles.css
+      ├─ components/
+      │  ├─ ActivityBar.tsx
+      │  ├─ ViewStack.tsx
+      │  └─ ResizablePanels.tsx
+      └─ views/
+         ├─ ExplorerView.tsx
+         ├─ FlowView.tsx
+         ├─ LogsView.tsx
+         └─ SettingsView.tsx

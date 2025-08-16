@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "Demo konfiguráció",
+  "properties": {
+    "name": { "type": "string", "title": "Név" },
+    "enabled": { "type": "boolean", "title": "Engedélyezve" },
+    "retries": { "type": "integer", "title": "Próbálkozások", "minimum": 0, "maximum": 10 },
+    "mode": { "type": "string", "title": "Mód", "enum": ["auto", "manual"] },
+    "endpoints": {
+      "type": "array",
+      "title": "Végpontok",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "title": "URL" },
+          "timeout": { "type": "number", "title": "Timeout (s)", "minimum": 0 }
+        },
+        "required": ["url"]
+      }
+    }
+  },
+  "required": ["name", "mode"]
+}

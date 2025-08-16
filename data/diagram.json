@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "A",
+      "type": "rect",
+      "x": 214.5,
+      "y": 56,
+      "width": 160,
+      "height": 90,
+      "title": "Box A",
+      "ports": [
+        {
+          "id": "A-t-0",
+          "side": "top",
+          "index": 0,
+          "label": "A/T0"
+        },
+        {
+          "id": "A-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "A/R0"
+        },
+        {
+          "id": "A-b-0",
+          "side": "bottom",
+          "index": 0,
+          "label": "A/B0"
+        },
+        {
+          "id": "A-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "A/L0"
+        }
+      ],
+      "meta": {}
+    },
+    {
+      "id": "B",
+      "type": "rect",
+      "x": 486.94769598481935,
+      "y": 230.46057749762804,
+      "width": 160,
+      "height": 90,
+      "title": "Box B",
+      "ports": [
+        {
+          "id": "B-t-0",
+          "side": "top",
+          "index": 0,
+          "label": "B/T0"
+        },
+        {
+          "id": "B-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "B/R0"
+        },
+        {
+          "id": "B-b-0",
+          "side": "bottom",
+          "index": 0,
+          "label": "B/B0"
+        },
+        {
+          "id": "B-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "B/L0"
+        }
+      ],
+      "meta": {}
+    },
+    {
+      "id": "Nmee2pow5",
+      "type": "rect",
+      "x": 7.341661687223677,
+      "y": 356.48724814784913,
+      "width": 160,
+      "height": 90,
+      "title": "Nmee2pow5",
+      "ports": [
+        {
+          "id": "Nmee2pow5-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "Nmee2pow5/L/0"
+        },
+        {
+          "id": "Nmee2pow5-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "Nmee2pow5/R/0"
+        },
+        {
+          "id": "Nmee2pow5-t-0",
+          "side": "top",
+          "index": 0,
+          "label": "Nmee2pow5/TOP/0"
+        }
+      ],
+      "meta": {}
+    }
+  ],
+  "edges": [
+    {
+      "id": "E1",
+      "source": {
+        "nodeId": "A",
+        "portId": "A-r-0"
+      },
+      "target": {
+        "nodeId": "B",
+        "portId": "B-l-0"
+      },
+      "routing": "orthogonal",
+      "label": "A → B",
+      "hint": "Right-to-Left",
+      "meta": {}
+    },
+    {
+      "id": "e-Nmee2pow5-Nmee2pow5-r-0--A-A-l-0",
+      "source": {
+        "nodeId": "Nmee2pow5",
+        "portId": "Nmee2pow5-r-0"
+      },
+      "target": {
+        "nodeId": "A",
+        "portId": "A-l-0"
+      },
+      "routing": "orthogonal",
+      "label": "Nmee2pow5 → A",
+      "meta": {}
+    },
+    {
+      "id": "e-A-A-b-0--Nmee2pow5-Nmee2pow5-t-0",
+      "source": {
+        "nodeId": "A",
+        "portId": "A-b-0"
+      },
+      "target": {
+        "nodeId": "Nmee2pow5",
+        "portId": "Nmee2pow5-t-0"
+      },
+      "routing": "orthogonal",
+      "label": "A → Nmee2pow5",
+      "meta": {}
+    },
+    {
+      "id": "e-B-B-b-0--Nmee2pow5-Nmee2pow5-r-0",
+      "source": {
+        "nodeId": "B",
+        "portId": "B-b-0"
+      },
+      "target": {
+        "nodeId": "Nmee2pow5",
+        "portId": "Nmee2pow5-r-0"
+      },
+      "routing": "orthogonal",
+      "label": "B → Nmee2pow5",
+      "meta": {}
+    }
+  ],
+  "viewport": {
+    "x": 91.98209883118926,
+    "y": -12.445966064396686,
+    "zoom": 1.4339552480158277
+  },
+  "meta": {}
+}
