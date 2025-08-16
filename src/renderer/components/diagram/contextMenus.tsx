@@ -1,65 +1,29 @@
-import React from "react";
-import { Menu, MenuItem, ListItemText, PopoverProps } from "@mui/material";
-import type { PortDTO } from "./types";
+import * as React from "react";
+import { Menu, MenuItem, ListItemText, Divider } from "@mui/material";
+import type { Direction, PortDTO, PortEdgeRouting } from "./types";
 
-type AnchorEl = PopoverProps["anchorEl"];
+type AnchorEl = HTMLElement | null;
 
 export function NodeContextMenu(props: {
   anchorEl: AnchorEl;
   open: boolean;
-  onClose: () => void;
   nodeId?: string;
-  onDeleteNode?: (nodeId: string) => void;
-  onAddPort?: (nodeId: string, side: "top" | "right" | "bottom" | "left") => void;
+  onClose: () => void;
+  onDeleteNode: (nodeId: string) => void;
+  onAddPort: (nodeId: string, side: Direction) => void;
 }) {
-  const { anchorEl, open, onClose, nodeId, onDeleteNode, onAddPort } = props;
+  const { anchorEl, open, nodeId, onClose, onDeleteNode, onAddPort } = props;
   return (
-    <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
-      <MenuItem
-        disabled={!nodeId}
-        onClick={() => {
-          if (nodeId) onDeleteNode?.(nodeId);
-          onClose();
-        }}
-      >
+    <Menu open={open} anchorEl={anchorEl} onClose={onClose}>
+      <MenuItem disabled={!nodeId} onClick={() => nodeId && onDeleteNode(nodeId)}>
         <ListItemText>Delete node</ListItemText>
       </MenuItem>
-      <MenuItem
-        disabled={!nodeId}
-        onClick={() => {
-          if (nodeId) onAddPort?.(nodeId, "top");
-          onClose();
-        }}
-      >
-        <ListItemText>Add port (top)</ListItemText>
-      </MenuItem>
-      <MenuItem
-        disabled={!nodeId}
-        onClick={() => {
-          if (nodeId) onAddPort?.(nodeId, "right");
-          onClose();
-        }}
-      >
-        <ListItemText>Add port (right)</ListItemText>
-      </MenuItem>
-      <MenuItem
-        disabled={!nodeId}
-        onClick={() => {
-          if (nodeId) onAddPort?.(nodeId, "bottom");
-          onClose();
-        }}
-      >
-        <ListItemText>Add port (bottom)</ListItemText>
-      </MenuItem>
-      <MenuItem
-        disabled={!nodeId}
-        onClick={() => {
-          if (nodeId) onAddPort?.(nodeId, "left");
-          onClose();
-        }}
-      >
-        <ListItemText>Add port (left)</ListItemText>
-      </MenuItem>
+      <Divider />
+      {(["top", "right", "bottom", "left"] as Direction[]).map((s) => (
+        <MenuItem key={s} disabled={!nodeId} onClick={() => nodeId && onAddPort(nodeId, s)}>
+          <ListItemText>Add port: {s}</ListItemText>
+        </MenuItem>
+      ))}
     </Menu>
   );
 }
@@ -67,21 +31,15 @@ export function NodeContextMenu(props: {
 export function PortContextMenu(props: {
   anchorEl: AnchorEl;
   open: boolean;
-  onClose: () => void;
   nodeId?: string;
   port?: PortDTO;
-  onRemovePort?: (nodeId: string, portId: string) => void;
+  onClose: () => void;
+  onRemovePort: (nodeId: string, portId: string) => void;
 }) {
-  const { anchorEl, open, onClose, nodeId, port, onRemovePort } = props;
+  const { anchorEl, open, nodeId, port, onClose, onRemovePort } = props;
   return (
-    <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
-      <MenuItem
-        disabled={!nodeId || !port}
-        onClick={() => {
-          if (nodeId && port) onRemovePort?.(nodeId, port.id);
-          onClose();
-        }}
-      >
+    <Menu open={open} anchorEl={anchorEl} onClose={onClose}>
+      <MenuItem disabled={!nodeId || !port} onClick={() => nodeId && port && onRemovePort(nodeId, port.id)}>
         <ListItemText>Remove port</ListItemText>
       </MenuItem>
     </Menu>
@@ -91,49 +49,31 @@ export function PortContextMenu(props: {
 export function EdgeContextMenu(props: {
   anchorEl: AnchorEl;
   open: boolean;
-  onClose: () => void;
   edgeId?: string;
-  onDeleteEdge?: (edgeId: string) => void;
-  onSetRouting?: (edgeId: string, routing: "straight" | "bezier" | "orthogonal") => void;
+  onClose: () => void;
+  onDeleteEdge: (edgeId: string) => void;
+  onSetRouting: (edgeId: string, routing: PortEdgeRouting) => void;
+  onOpenEditor: (edgeId: string) => void;
 }) {
-  const { anchorEl, open, onClose, edgeId, onDeleteEdge, onSetRouting } = props;
+  const { anchorEl, open, edgeId, onClose, onDeleteEdge, onSetRouting, onOpenEditor } = props;
   return (
-    <Menu anchorEl={anchorEl} open={open} onClose={onClose}>
-      <MenuItem
-        disabled={!edgeId}
-        onClick={() => {
-          if (edgeId) onDeleteEdge?.(edgeId);
-          onClose();
-        }}
-      >
-        <ListItemText>Delete edge</ListItemText>
+    <Menu open={open} anchorEl={anchorEl} onClose={onClose}>
+      <MenuItem disabled={!edgeId} onClick={() => edgeId && onOpenEditor(edgeId)}>
+        <ListItemText>Edit edge…</ListItemText>
       </MenuItem>
-      <MenuItem
-        disabled={!edgeId}
-        onClick={() => {
-          if (edgeId) onSetRouting?.(edgeId, "straight");
-          onClose();
-        }}
-      >
+      <Divider />
+      <MenuItem disabled={!edgeId} onClick={() => edgeId && onSetRouting(edgeId, "orthogonal")}>
+        <ListItemText>Routing: orthogonal</ListItemText>
+      </MenuItem>
+      <MenuItem disabled={!edgeId} onClick={() => edgeId && onSetRouting(edgeId, "straight")}>
         <ListItemText>Routing: straight</ListItemText>
       </MenuItem>
-      <MenuItem
-        disabled={!edgeId}
-        onClick={() => {
-          if (edgeId) onSetRouting?.(edgeId, "bezier");
-          onClose();
-        }}
-      >
+      <MenuItem disabled={!edgeId} onClick={() => edgeId && onSetRouting(edgeId, "bezier")}>
         <ListItemText>Routing: bezier</ListItemText>
       </MenuItem>
-      <MenuItem
-        disabled={!edgeId}
-        onClick={() => {
-          if (edgeId) onSetRouting?.(edgeId, "orthogonal");
-          onClose();
-        }}
-      >
-        <ListItemText>Routing: orthogonal</ListItemText>
+      <Divider />
+      <MenuItem disabled={!edgeId} onClick={() => edgeId && onDeleteEdge(edgeId)}>
+        <ListItemText>Delete edge</ListItemText>
       </MenuItem>
     </Menu>
   );
