@@ -1,136 +1,106 @@
 import React from "react";
-import { CssBaseline, Container, Box, Stack, Button, Typography, Divider } from "@mui/material";
-import StatusToasts from "./components/StatusToasts";
-import MetricsPanel from "./components/MetricsPanel";
-import SearchPanel from "./components/SearchPanel";
-import ImagePanel from "./components/ImagePanel";
+import { SnackbarProvider, useSnackbar } from "notistack";
+import { Button, Container, Box, Stack, Typography } from "@mui/material";
 import { IpcChannels } from "../ipc/channels";
 
-function useView(): "main" | "metrics" | "search" {
-  const [view, setView] = React.useState<"main" | "metrics" | "search">("main");
+function useView(): "winmain"|"win1"|"win2" {
+  const [view, setView] = React.useState<"winmain"|"win1"|"win2">("winmain");
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const v = (params.get("view") || "main") as "main" | "metrics" | "search";
-    setView(v);
+    const qp = new URLSearchParams(window.location.search);
+    setView((qp.get("view") as any) || "winmain");
   }, []);
   return view;
 }
 
-function useScopedPush(view: string) {
-  const scope = `${view}:default`;
+const NotistackBridge: React.FC = () => {
+  const { enqueueSnackbar } = useSnackbar();
   React.useEffect(() => {
-    // regisztráljuk azokat a push csatornákat, amiket ez a nézet szeretne kapni
-    const regs: Array<Promise<any>> = [];
-    if (view === "metrics" || view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.METRICS_TICK, scope));
-    }
-    if (view === "search" || view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.SEARCH_INDEXED, scope));
-      regs.push(window.api.registerPush(IpcChannels.SEARCH_PROGRESS, scope));
-    }
-    // képek: csak a mainben jelenítjük meg, de mutatom a mintát
-    if (view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.IMAGE_COMPLETED, scope));
-      regs.push(window.api.registerPush(IpcChannels.IMAGE_ERROR, scope));
-    }
-    // cleanup: leiratkozás
+    if (!window.api?.onToast) return;
+    const off = window.api.onToast(({ message, variant }) => enqueueSnackbar(message, { variant }));
+    return () => off?.();
+  }, [enqueueSnackbar]);
+  return null;
+};
+
+const useLifecycleLogs = (label: string) => {
+  React.useEffect(() => {
+    // minden ablak logolja a lifecycle eventeket
+    const off1 = window.api.onLifecycle("t1", ev => console.log(`${label} lifecycle`, ev));
+    const off2 = window.api.onLifecycle("t2", ev => console.log(`${label} lifecycle`, ev));
+    const off3 = window.api.onLifecycle("t3", ev => console.log(`${label} lifecycle`, ev));
+    return () => { off1(); off2(); off3(); };
+  }, [label]);
+};
+
+const Main: React.FC = () => {
+  useLifecycleLogs("winmain");
+
+  React.useEffect(() => {
+    const scope = "main:default";
+    if (!window.api?.registerPush) return;
+    window.api.registerPush(IpcChannels.T1_TIMED, scope);
+    window.api.registerPush(IpcChannels.T2_TIMED, scope);
+    window.api.registerPush(IpcChannels.T3_TIMED, scope);
+    const off1 = window.api.onTimed("t1", p => console.log("MAIN timed t1:", p));
+    const off2 = window.api.onTimed("t2", p => console.log("MAIN timed t2:", p));
+    const off3 = window.api.onTimed("t3", p => console.log("MAIN timed t3:", p));
     return () => {
-      if (view === "metrics" || view === "main") {
-        window.api.unregisterPush(IpcChannels.METRICS_TICK, scope);
-      }
-      if (view === "search" || view === "main") {
-        window.api.unregisterPush(IpcChannels.SEARCH_INDEXED, scope);
-        window.api.unregisterPush(IpcChannels.SEARCH_PROGRESS, scope);
-      }
-      if (view === "main") {
-        window.api.unregisterPush(IpcChannels.IMAGE_COMPLETED, scope);
-        window.api.unregisterPush(IpcChannels.IMAGE_ERROR, scope);
-      }
+      window.api.unregisterPush(IpcChannels.T1_TIMED, scope);
+      window.api.unregisterPush(IpcChannels.T2_TIMED, scope);
+      window.api.unregisterPush(IpcChannels.T3_TIMED, scope);
+      off1(); off2(); off3();
     };
-  }, [view]);
+  }, []);
 
-  return scope;
-}
-
-const MainLayout: React.FC = () => {
-  const scope = useScopedPush("main");
-  const start = () => window.api.startAllWorkers();
-  const stop = () => window.api.stopAllWorkers();
-  const openMetrics = () => window.api.focusOrCreateWindow("metrics");
-  const openSearch = () => window.api.focusOrCreateWindow("search");
+  const open1 = () => window.api.openWin1();
+  const open2 = () => window.api.openWin2();
 
   return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="lg">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>cf8 – Main Window</Typography>
-          <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
-            <Button variant="contained" onClick={start}>Start all workers</Button>
-            <Button variant="outlined" onClick={stop}>Stop all workers</Button>
-            <Button onClick={openMetrics}>Open Metrics Window</Button>
-            <Button onClick={openSearch}>Open Search Window</Button>
-          </Stack>
-
-          <Divider sx={{ my: 2 }} />
-          <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-            <Box flex={1}><MetricsPanel /></Box>
-            <Box flex={1}><SearchPanel /></Box>
-          </Stack>
-
-          <Divider sx={{ my: 2 }} />
-          <ImagePanel />
-        </Box>
-      </Container>
-      <StatusToasts />
-    </>
+    <Container maxWidth="sm">
+      <Box py={4}>
+        <Typography variant="h5" gutterBottom>winmain</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="contained" onClick={open1}>Open win1</Button>
+          <Button variant="outlined" onClick={open2}>Open win2</Button>
+        </Stack>
+      </Box>
+    </Container>
   );
 };
 
-const MetricsOnlyLayout: React.FC = () => {
-  const scope = useScopedPush("metrics");
-  const start = () => window.api.metricsStart(1000, scope);
-  const stop = () => window.api.metricsStop(scope);
+const PlainWin: React.FC<{ label: "win1"|"win2" }> = ({ label }) => {
+  useLifecycleLogs(label);
+
+  React.useEffect(() => {
+    const scope = `${label}:default`;
+    const ch = label === "win1" ? IpcChannels.T1_TIMED : IpcChannels.T2_TIMED;
+    if (!window.api?.registerPush) return;
+    window.api.registerPush(ch, scope);
+    const off = window.api.onTimed(label === "win1" ? "t1" : "t2", p => console.log(`${label} timed:`, p));
+    return () => { window.api.unregisterPush(ch, scope); off(); };
+  }, [label]);
 
   return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="md">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>Metrics Window</Typography>
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-            <Button variant="contained" onClick={start}>Start metrics</Button>
-            <Button variant="outlined" onClick={stop}>Stop metrics</Button>
-          </Stack>
-          <MetricsPanel />
-        </Box>
-      </Container>
-      <StatusToasts />
-    </>
+    <Container maxWidth="sm">
+      <Box py={4}>
+        <Typography variant="h5">{label}</Typography>
+      </Box>
+    </Container>
   );
 };
 
-const SearchOnlyLayout: React.FC = () => {
-  const scope = useScopedPush("search");
-  return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="md">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>Search Window</Typography>
-          <SearchPanel />
-        </Box>
-      </Container>
-      <StatusToasts />
-    </>
-  );
-};
-
-const App: React.FC = () => {
+const AppInner: React.FC = () => {
   const view = useView();
-  if (view === "metrics") return <MetricsOnlyLayout />;
-  if (view === "search") return <SearchOnlyLayout />;
-  return <MainLayout />;
+  if (view === "win1") return <PlainWin label="win1" />;
+  if (view === "win2") return <PlainWin label="win2" />;
+  return <Main />;
 };
+
+const App: React.FC = () => (
+  <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+    <NotistackBridge />
+    <AppInner />
+  </SnackbarProvider>
+);
 
 export default App;

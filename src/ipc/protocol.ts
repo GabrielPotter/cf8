@@ -1,61 +1,38 @@
-// ---- UI toast ----
-export type ToastSeverity = "success" | "info" | "warning" | "error";
-export interface ToastMessage {
-  severity: ToastSeverity;
-  message: string;
-  timeoutMs?: number;
+// ----- Lifecycle push -----
+export type LifecycleStatus = "started" | "stopped" | "error";
+export interface LifecycleEvent {
+  service: "t1" | "t2" | "t3";
+  status: LifecycleStatus;
+  message?: string;
 }
 
-// ---- Metrics worker ----
-export interface MetricsSnapshot {
-  ts: number;
-  cpuLoad: number;      // 0..1 (demo)
-  ramUsedMB: number;    // demo
+// ----- Timed push -----
+export interface TimedPush {
+  service: "t1" | "t2" | "t3";
+  info: string; // bármilyen rövid üzenet (demo)
 }
 
-export type MetricsOutbound =
-  | { type: "ready" }
-  | { type: "tick"; snapshot: MetricsSnapshot }
-  | { type: "rpcResult"; id: number; result: any }
-  | { type: "rpcError"; id: number; error: string }
-  | { type: "error"; error: string };
+// ----- RPC kérés paraméterek (különböző mindhárom) -----
+export interface T1RequestParams { a: number; }
+export interface T2RequestParams { q: string; n: number; }
+export interface T3RequestParams { flag: boolean; tags: string[]; }
 
-export type MetricsInbound =
-  | { type: "startMonitoring"; intervalMs?: number }
-  | { type: "stopMonitoring" }
-  | { type: "getSnapshot"; id: number }
+// ----- RPC válasz (echo string skeleton) -----
+export type RpcEchoResponse = string;
+
+// ----- Command be/kimenet -----
+export interface CommandRequest { command: string; }
+export type CommandResponse = string;
+
+// ----- Worker inbound/outbound váz -----
+export type TWorkerInbound =
+  | { type: "init"; delayMs?: number }         // időzített push beállítása
+  | { type: "request"; id: number; payload: any } // eltérő paraméterek workerfüggően
+  | { type: "command"; id: number; command: string }
   | { type: "shutdown" };
 
-// ---- Search worker ----
-export interface SearchDoc { id: string; text: string; }
-
-export type SearchOutbound =
-  | { type: "ready" }
-  | { type: "indexed"; count: number }
-  | { type: "progress"; current: number; total: number }
-  | { type: "rpcResult"; id: number; result: any }
-  | { type: "rpcError"; id: number; error: string }
-  | { type: "error"; error: string };
-
-export type SearchInbound =
-  | { type: "indexDocs"; id: number; docs: SearchDoc[] }
-  | { type: "search"; id: number; query: string }
-  | { type: "clear"; id: number }
-  | { type: "shutdown" };
-
-// ---- Image worker ----
-export interface ImageItem { id: string; data: string /* e.g. base64 or path (demo) */; }
-export interface Thumbnail { id: string; size: [number, number]; hash: string; }
-
-export type ImageOutbound =
-  | { type: "ready" }
-  | { type: "completed"; id: string; thumb: Thumbnail }
-  | { type: "rpcResult"; id: number; result: any }
-  | { type: "rpcError"; id: number; error: string }
-  | { type: "error"; error: string };
-
-export type ImageInbound =
-  | { type: "generate"; id: number; item: ImageItem }
-  | { type: "list"; id: number }
-  | { type: "clear"; id: number }
-  | { type: "shutdown" };
+export type TWorkerOutbound =
+  | { type: "lifecycle"; event: LifecycleEvent }
+  | { type: "timed"; payload: TimedPush }
+  | { type: "rpcResult"; id: number; result: RpcEchoResponse }
+  | { type: "rpcError"; id: number; error: string };

@@ -1,43 +1,29 @@
-import type { ToastMessage, MetricsSnapshot, SearchDoc, ImageItem, Thumbnail } from "../ipc/protocol";
-import { IpcChannels } from "../ipc/channels";
+import type { IpcChannels } from "../ipc/channels";
+import type { LifecycleEvent, TimedPush, T1RequestParams, T2RequestParams, T3RequestParams } from "../ipc/protocol";
 
 declare global {
   interface Window {
     api: {
-      // Global workers
+      onToast(cb: (msg: { message: string; variant?: "default"|"error"|"success"|"warning"|"info" }) => void): () => void;
+      onLifecycle(service: "t1"|"t2"|"t3", cb: (ev: LifecycleEvent) => void): () => void;
+      onTimed(service: "t1"|"t2"|"t3", cb: (p: TimedPush) => void): () => void;
+
+      registerPush(channel: IpcChannels, scope: string): Promise<boolean>;
+      unregisterPush(channel: IpcChannels, scope: string): Promise<boolean>;
+
+      openWin1(): Promise<boolean>;
+      openWin2(): Promise<boolean>;
+
       startAllWorkers(): Promise<boolean>;
       stopAllWorkers(): Promise<boolean>;
 
-      // Metrics
-      metricsStart(intervalMs?: number, scope?: string): Promise<boolean>;
-      metricsStop(scope?: string): Promise<boolean>;
-      metricsGetSnapshot(): Promise<MetricsSnapshot>;
-      onMetricsTick(cb: (snap: MetricsSnapshot) => void): () => void;
+      t1Request(params: T1RequestParams, scope?: string): Promise<string>;
+      t2Request(params: T2RequestParams, scope?: string): Promise<string>;
+      t3Request(params: T3RequestParams, scope?: string): Promise<string>;
 
-      // Search
-      searchIndexDocs(docs: SearchDoc[], scope?: string): Promise<boolean>;
-      searchQuery(query: string, scope?: string): Promise<string[]>;
-      searchClear(scope?: string): Promise<boolean>;
-      onSearchIndexed(cb: (count: number) => void): () => void;
-      onSearchProgress(cb: (current:number,total:number)=>void): () => void;
-
-      // Image
-      imageGenerate(item: ImageItem, scope?: string): Promise<Thumbnail>;
-      imageList(scope?: string): Promise<Thumbnail[]>;
-      imageClear(scope?: string): Promise<boolean>;
-      onImageCompleted(cb: (id:string, thumb: Thumbnail) => void): () => void;
-      onImageError(cb: (error: string) => void): () => void;
-
-      // UI toast
-      onToast(cb: (t: ToastMessage) => void): () => void;
-
-      // Windows
-      openWindow(view: "metrics" | "search"): Promise<boolean>;
-      focusOrCreateWindow(view: "metrics" | "search"): Promise<boolean>;
-
-      // Push routing
-      registerPush(channel: IpcChannels, scope: string): Promise<boolean>;
-      unregisterPush(channel: IpcChannels, scope: string): Promise<boolean>;
+      t1Command(command: string, scope?: string): Promise<string>;
+      t2Command(command: string, scope?: string): Promise<string>;
+      t3Command(command: string, scope?: string): Promise<string>;
     };
   }
 }

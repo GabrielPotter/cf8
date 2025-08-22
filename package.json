@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
-  "main": "dist/main/main.js",
+  "main": "dist/main.js",
   "scripts": {
     "dev:main": "tsc -w",
     "dev:renderer": "vite",
-    "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron dist/main/main.js",
+    "dev:electron": "wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron dist/main.js",
     "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:renderer\" \"npm:dev:electron\"",
     "build:main": "tsc ",
     "build:renderer": "vite build",
     "build": "npm run build:main && npm run build:renderer",
     "postbuild": "mkdir -p dist/assets && rsync -a assets/ dist/assets/",
-    "start": "electron --no-sandbox dist/main/main.js",
+    "start": "electron --no-sandbox dist/main.js",
     "test": "jest --coverage"
   },
   "dependencies": {
@@ -29,6 +29,7 @@
     "electron": "^31.3.0",
     "jest": "^30.0.5",
     "memfs": "^4.36.3",
+    "notistack": "^3.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.1.4",
