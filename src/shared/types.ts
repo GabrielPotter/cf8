@@ -1,4 +1,4 @@
-export type ViewId = "explorer" | "flow" | "logs" | "settings" | "props";
+export type ViewId = "explorer" | "flow" | "logs" | "settings" | "props" | "account";
 
 export interface CatalogNode {
   name: string;

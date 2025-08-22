@@ -1,7 +1,7 @@
 import { parentPort, workerData } from "node:worker_threads";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { CatalogNode } from "@/shared/types";
+import type { CatalogNode } from "../shared/types";
 
 function readDirTree(root: string): CatalogNode {
   const stat = fs.statSync(root);

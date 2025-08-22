@@ -1,5 +1,0 @@
-{
-  "entry": ["src/main/main.ts","src/renderer/main.tsx"],
-   "project": ["**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}!"],
-  "ignore": ["data/**", "dist/**", "trash/**"]
-}

@@ -4,8 +4,9 @@ import FolderIcon from "@mui/icons-material/Folder";
 import HubIcon from "@mui/icons-material/Hub";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AccountCircle from "@mui/icons-material/AccountCircle"
 import TuneIcon from "@mui/icons-material/Tune";
-import type { ViewId } from "@/shared/types";
+import type { ViewId } from "../../shared/types"
 
 type Item = { id: ViewId; label: string; icon: React.ReactNode };
 
@@ -16,7 +17,10 @@ const TOP_ITEMS: Item[] = [
   { id: "props", label: "Property Grid", icon: <TuneIcon /> },
 ];
 
-const BOTTOM_ITEMS: Item[] = [{ id: "settings", label: "Settings", icon: <SettingsIcon /> }];
+const BOTTOM_ITEMS: Item[] = [
+  { id: "account", label: "user account", icon: <AccountCircle/>},
+  { id: "settings", label: "Settings", icon: <SettingsIcon /> }
+];
 
 export interface ActivityBarProps {
   active: ViewId;
