@@ -41,9 +41,9 @@ const Main: React.FC = () => {
     window.api.registerPush(IpcChannels.T1_TIMED, scope);
     window.api.registerPush(IpcChannels.T2_TIMED, scope);
     window.api.registerPush(IpcChannels.T3_TIMED, scope);
-    const off1 = window.api.onTimed("t1", p => console.log("MAIN timed t1:", p));
-    const off2 = window.api.onTimed("t2", p => console.log("MAIN timed t2:", p));
-    const off3 = window.api.onTimed("t3", p => console.log("MAIN timed t3:", p));
+    const off1 = window.api.onTimed("t1", p => window.api.toast({ message: `MAIN timed t1: ${p.info}` }));
+    const off2 = window.api.onTimed("t2", p => window.api.toast({ message: `MAIN timed t2: ${p.info}` }));
+    const off3 = window.api.onTimed("t3", p => window.api.toast({ message: `MAIN timed t3: ${p.info}` }));
     return () => {
       window.api.unregisterPush(IpcChannels.T1_TIMED, scope);
       window.api.unregisterPush(IpcChannels.T2_TIMED, scope);
@@ -76,7 +76,7 @@ const PlainWin: React.FC<{ label: "win1"|"win2" }> = ({ label }) => {
     const ch = label === "win1" ? IpcChannels.T1_TIMED : IpcChannels.T2_TIMED;
     if (!window.api?.registerPush) return;
     window.api.registerPush(ch, scope);
-    const off = window.api.onTimed(label === "win1" ? "t1" : "t2", p => console.log(`${label} timed:`, p));
+    const off = window.api.onTimed(label === "win1" ? "t1" : "t2", p => window.api.toast({ message: `${label} timed: ${p.info}` }));
     return () => { window.api.unregisterPush(ch, scope); off(); };
   }, [label]);
 

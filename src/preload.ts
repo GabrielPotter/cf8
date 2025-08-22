@@ -14,6 +14,11 @@ const api = {
     return () => ipcRenderer.removeListener(IpcChannels.UI_TOAST, h);
   },
 
+  // Közvetlen toast küldése a rendererben
+  toast: (msg: { message: string; variant?: "default"|"error"|"success"|"warning"|"info" }) => {
+    ipcRenderer.emit(IpcChannels.UI_TOAST, undefined, msg);
+  },
+
   // Lifecycle pushok – csak ha külön is hallgatnád
   onLifecycle: (service: "t1"|"t2"|"t3", cb: (ev: LifecycleEvent) => void) => {
     const ch = service === "t1" ? IpcChannels.T1_LIFECYCLE : service === "t2" ? IpcChannels.T2_LIFECYCLE : IpcChannels.T3_LIFECYCLE;
