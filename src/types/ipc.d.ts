@@ -5,6 +5,7 @@ declare global {
   interface Window {
     api: {
       onToast(cb: (msg: { message: string; variant?: "default"|"error"|"success"|"warning"|"info" }) => void): () => void;
+      toast(msg: { message: string; variant?: "default"|"error"|"success"|"warning"|"info" }): void;
       onLifecycle(service: "t1"|"t2"|"t3", cb: (ev: LifecycleEvent) => void): () => void;
       onTimed(service: "t1"|"t2"|"t3", cb: (p: TimedPush) => void): () => void;
 
