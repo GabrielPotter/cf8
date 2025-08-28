@@ -1,106 +1,115 @@
-import React from "react";
-import { SnackbarProvider, useSnackbar } from "notistack";
-import { Button, Container, Box, Stack, Typography } from "@mui/material";
-import { IpcChannels } from "../ipc/channels";
+import React, { useEffect, useState } from "react";
+import { useSnackbar, type VariantType } from "notistack";
+import { IconButton, Box } from "@mui/material";
+import HomeIcon from "@mui/icons-material/Home";
+import ArticleIcon from "@mui/icons-material/Article";
+import SettingsIcon from "@mui/icons-material/Settings";
+import InfoIcon from "@mui/icons-material/Info";
+import PersonIcon from "@mui/icons-material/Person"
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import "../ipc/ipc.d";
+import theme from "./theme";
+import SettingsView from "./views/SettingsView";
+import LogsView from "./views/LogsView";
+import AboutView from "./views/AboutView"
+import AccountView from "./views/AccountView";
+import ExplorerView from "./views/ExplorerView";
+import { rendererLog } from "./logger";
 
-function useView(): "winmain"|"win1"|"win2" {
-  const [view, setView] = React.useState<"winmain"|"win1"|"win2">("winmain");
-  React.useEffect(() => {
-    const qp = new URLSearchParams(window.location.search);
-    setView((qp.get("view") as any) || "winmain");
-  }, []);
-  return view;
-}
+type ViewKey = "workspace" |"explorer"| "logs" | "settings" | "about"|"account";
 
-const NotistackBridge: React.FC = () => {
-  const { enqueueSnackbar } = useSnackbar();
-  React.useEffect(() => {
-    if (!window.api?.onToast) return;
-    const off = window.api.onToast(({ message, variant }) => enqueueSnackbar(message, { variant }));
-    return () => off?.();
-  }, [enqueueSnackbar]);
-  return null;
-};
-
-const useLifecycleLogs = (label: string) => {
-  React.useEffect(() => {
-    // minden ablak logolja a lifecycle eventeket
-    const off1 = window.api.onLifecycle("t1", ev => console.log(`${label} lifecycle`, ev));
-    const off2 = window.api.onLifecycle("t2", ev => console.log(`${label} lifecycle`, ev));
-    const off3 = window.api.onLifecycle("t3", ev => console.log(`${label} lifecycle`, ev));
-    return () => { off1(); off2(); off3(); };
-  }, [label]);
-};
-
-const Main: React.FC = () => {
-  useLifecycleLogs("winmain");
-
-  React.useEffect(() => {
-    const scope = "main:default";
-    if (!window.api?.registerPush) return;
-    window.api.registerPush(IpcChannels.T1_TIMED, scope);
-    window.api.registerPush(IpcChannels.T2_TIMED, scope);
-    window.api.registerPush(IpcChannels.T3_TIMED, scope);
-    const off1 = window.api.onTimed("t1", p => window.api.toast({ message: `MAIN timed t1: ${p.info}` }));
-    const off2 = window.api.onTimed("t2", p => window.api.toast({ message: `MAIN timed t2: ${p.info}` }));
-    const off3 = window.api.onTimed("t3", p => window.api.toast({ message: `MAIN timed t3: ${p.info}` }));
-    return () => {
-      window.api.unregisterPush(IpcChannels.T1_TIMED, scope);
-      window.api.unregisterPush(IpcChannels.T2_TIMED, scope);
-      window.api.unregisterPush(IpcChannels.T3_TIMED, scope);
-      off1(); off2(); off3();
-    };
-  }, []);
-
-  const open1 = () => window.api.openWin1();
-  const open2 = () => window.api.openWin2();
-
-  return (
-    <Container maxWidth="sm">
-      <Box py={4}>
-        <Typography variant="h5" gutterBottom>winmain</Typography>
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={open1}>Open win1</Button>
-          <Button variant="outlined" onClick={open2}>Open win2</Button>
-        </Stack>
-      </Box>
-    </Container>
-  );
-};
-
-const PlainWin: React.FC<{ label: "win1"|"win2" }> = ({ label }) => {
-  useLifecycleLogs(label);
-
-  React.useEffect(() => {
-    const scope = `${label}:default`;
-    const ch = label === "win1" ? IpcChannels.T1_TIMED : IpcChannels.T2_TIMED;
-    if (!window.api?.registerPush) return;
-    window.api.registerPush(ch, scope);
-    const off = window.api.onTimed(label === "win1" ? "t1" : "t2", p => window.api.toast({ message: `${label} timed: ${p.info}` }));
-    return () => { window.api.unregisterPush(ch, scope); off(); };
-  }, [label]);
-
-  return (
-    <Container maxWidth="sm">
-      <Box py={4}>
-        <Typography variant="h5">{label}</Typography>
-      </Box>
-    </Container>
-  );
-};
-
-const AppInner: React.FC = () => {
-  const view = useView();
-  if (view === "win1") return <PlainWin label="win1" />;
-  if (view === "win2") return <PlainWin label="win2" />;
-  return <Main />;
-};
-
-const App: React.FC = () => (
-  <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
-    <NotistackBridge />
-    <AppInner />
-  </SnackbarProvider>
+const WorkspaceContent: React.FC = () => (
+    <PanelGroup direction="horizontal" style={{ height: "100%" }}>
+        <Panel defaultSize={30} minSize={20}>
+            <Box sx={{ backgroundColor: "#295dceff", height: "100%" }} className="panel-left">
+                Left
+            </Box>
+        </Panel>
+        <PanelResizeHandle className="handle" style={{ width: "5px", background: theme.palette.divider }} />
+        <Panel minSize={30}>
+            <Box sx={{ backgroundColor: "#62ca78ff", height: "100%" }} className="panel-mid">
+                Mid
+            </Box>
+        </Panel>
+        <PanelResizeHandle className="handle" style={{ width: "5px", background: theme.palette.grey[300] }} />
+        <Panel defaultSize={30} minSize={20}>
+            <div className="panel-right">Right</div>
+        </Panel>
+    </PanelGroup>
 );
 
-export default App;
+
+
+export const App: React.FC = () => {
+    const { enqueueSnackbar } = useSnackbar();
+    const [activeView, setActiveView] = useState<ViewKey>("workspace");
+
+    useEffect(() => {
+        window.api.workerMessage((event, payload) => {
+            // console.log("...>", event, payload);
+            enqueueSnackbar(`This is a success message: ${payload}`, { variant: event as VariantType });
+        });
+    }, []);
+
+    const handleSelectView = (view: ViewKey) => {
+        setActiveView(view);
+        void rendererLog.info(`View switched to ${view}`);
+    };
+    const views: Record<ViewKey, React.ReactNode> = {
+        workspace: <WorkspaceContent />,
+        logs: <LogsView />,
+        settings: <SettingsView />,
+        about: <AboutView />,
+        account: <AccountView/>,
+        explorer:<ExplorerView/>
+    };
+
+    return (
+        <Box sx={{ display: "flex", height: "100vh" }}>
+            <Box
+                sx={{
+                    width: 40,
+                    minWidth: 40,
+                    maxWidth: 40,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center"
+                }}
+            >
+                <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("workspace")}>
+                    <HomeIcon />
+                </IconButton>
+                <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("explorer")}>
+                    <HomeIcon />
+                </IconButton>
+                <Box sx={{ flexGrow: 1 }} />
+                <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("account")}>
+                    <PersonIcon />
+                </IconButton>
+                <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("logs")}>
+                    <ArticleIcon />
+                </IconButton>
+                <IconButton color={activeView === "settings" ? "primary" : "default"} onClick={() => handleSelectView("settings")}>
+                    <SettingsIcon />
+                </IconButton>
+                <IconButton color={activeView === "about" ? "primary" : "default"} onClick={() => handleSelectView("about")}>
+                    <InfoIcon />
+                </IconButton>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0, position: "relative" }}>
+                {(Object.keys(views) as ViewKey[]).map((viewKey) => (
+                    <Box
+                        key={viewKey}
+                        sx={{
+                            display: activeView === viewKey ? "block" : "none",
+                            height: "100%",
+                            width: "100%",
+                        }}
+                    >
+                        {views[viewKey]}
+                    </Box>
+                ))}
+            </Box>
+        </Box>
+    );
+};

@@ -14,10 +14,8 @@
     "types": ["node", "react", "react-dom", "jest"]
   },
   "include": [
-    "src/*.ts",
-    "src/windows/**/*.ts",
-    "src/workers/**/*.ts",
-    "src/shared/**/*.ts",
-    "src/types/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
   ]
 }

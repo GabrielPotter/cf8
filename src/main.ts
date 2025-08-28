@@ -1,123 +1,264 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import { join } from "node:path";
+import path from "node:path";
 import { IpcChannels } from "./ipc/channels";
-import { T1Client, T2Client, T3Client, registerPushTarget, unregisterPushTarget } from "./workers/workerClients";
-import type { T1RequestParams, T2RequestParams, T3RequestParams, CommandRequest } from "./ipc/protocol";
+//import { T1Client, T2Client, T3Client, registerPushTarget, unregisterPushTarget } from "./workers/workerClients";
+//import type { T1RequestParams, T2RequestParams, T3RequestParams, CommandRequest } from "./ipc/protocol";
+import { SystemConfig } from "./common/system-config";
+import { UserConfig } from "./common/user-config";
+import { WindowFactory } from "./windows/window-factory";
+import log from "electron-log"
+import { isRendererLogLevel } from "./common/logging";
+import { environmentInfo } from "./workers/environmentInfo";
+import { catalogScanner } from "./workers/catalogScanner";
 
-let winmain: BrowserWindow | null = null;
-let win1: BrowserWindow | null = null;
-let win2: BrowserWindow | null = null;
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
 
-const getMain = () => winmain;
+app.setName("cf8")
 
-const t1 = new T1Client(getMain);
-const t2 = new T2Client(getMain);
-const t3 = new T3Client(getMain);
+Object.assign(console, log.functions);
 
-function createWindow(name: "winmain" | "win1" | "win2") {
-    const win = new BrowserWindow({
-        width: 900,
-        height: 600,
-        title: name,
-        webPreferences: {
-            preload: join(__dirname, "preload.js"),
-            sandbox: false,
-            contextIsolation: true,
-            nodeIntegration: false,
-        },
-    });
-    const query = { view: name };
-    if (app.isPackaged) win.loadFile(join(__dirname, "renderer/index.html"), { query });
-    else {
-      win.loadURL(`http://localhost:5173/?view=${name}`);
-      win.webContents.openDevTools({ mode: "detach" });
+log.transports.file.level = 'info';
+log.transports.file.resolvePathFn = () =>
+  path.join(app.getPath('logs'), 'app.log');
+
+ipcMain.handle(IpcChannels.LOGS_READ, async () => {
+  try {
+    const entries = log.transports.file.readAllLogs();
+    return { success: true, entries };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("Failed to read logs", message);
+    return { success: false, error: message };
+  }
+});
+
+ipcMain.handle(
+  IpcChannels.LOGS_WRITE,
+  async (
+    _event,
+    payload: { level?: string; message?: string; args?: unknown[] } = {}
+  ) => {
+    const level = isRendererLogLevel(payload.level) ? payload.level : "info";
+    const message = typeof payload.message === "string" ? payload.message : "";
+    const args = Array.isArray(payload.args) ? payload.args : [];
+
+    try {
+      const logFn = log[level] ?? log.info;
+      logFn(`[renderer] ${message}`, ...args);
+      return { success: true };
+    } catch (error) {
+      const errMessage = error instanceof Error ? error.message : String(error);
+      log.error("Failed to write renderer log", errMessage, { payload });
+      return { success: false, error: errMessage };
     }
-    win.on("closed", () => {
-        if (name === "winmain") winmain = null;
-        if (name === "win1") win1 = null;
-        if (name === "win2") win2 = null;
-    });
-    return win;
-}
+  }
+);
+
+ipcMain.handle(IpcChannels.ENVIRONMENT_INFO, async () => {
+  try {
+    return { success: true, data: environmentInfo.getSnapshot({ refresh: true }) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("Failed to collect environment info", message);
+    return { success: false, error: message };
+  }
+});
+
+ipcMain.handle(IpcChannels.CONFIG_DUMP, async () => {
+  try {
+    const system = SystemConfig.instance().dump();
+    const user = UserConfig.instance().dump();
+    return { success: true, system, user };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log.error("Failed to collect config dumps", message);
+    return { success: false, error: message };
+  }
+});
+
+ipcMain.handle(
+  IpcChannels.CATALOG_SCAN,
+  async (_event, payload: { path: string }) => {
+    const folderPath = payload?.path;
+    try {
+      const tree = await catalogScanner.scan(folderPath);
+      return { success: true, tree };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to scan catalog", message, { folderPath });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_CREATE_FILE,
+  async (_event, payload: { directoryPath: string; fileName: string }) => {
+    try {
+      const fullPath = await catalogScanner.createFile(payload?.directoryPath ?? "", payload?.fileName ?? "");
+      return { success: true, fullPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to create file", message, { directoryPath: payload?.directoryPath, fileName: payload?.fileName });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_CREATE_FOLDER,
+  async (_event, payload: { directoryPath: string; folderName: string }) => {
+    try {
+      const fullPath = await catalogScanner.createFolder(payload?.directoryPath ?? "", payload?.folderName ?? "");
+      return { success: true, fullPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to create folder", message, { directoryPath: payload?.directoryPath, folderName: payload?.folderName });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_DELETE_FILE,
+  async (_event, payload: { path: string }) => {
+    try {
+      await catalogScanner.deleteFile(payload?.path ?? "");
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to delete file", message, { path: payload?.path });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_DELETE_FOLDER,
+  async (_event, payload: { path: string }) => {
+    try {
+      await catalogScanner.deleteFolder(payload?.path ?? "");
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to delete folder", message, { path: payload?.path });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_RENAME_FILE,
+  async (_event, payload: { path: string; newName: string }) => {
+    try {
+      const fullPath = await catalogScanner.renameFile(payload?.path ?? "", payload?.newName ?? "");
+      return { success: true, fullPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to rename file", message, { path: payload?.path, newName: payload?.newName });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.CATALOG_RENAME_FOLDER,
+  async (_event, payload: { path: string; newName: string }) => {
+    try {
+      const fullPath = await catalogScanner.renameFolder(payload?.path ?? "", payload?.newName ?? "");
+      return { success: true, fullPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to rename folder", message, { path: payload?.path, newName: payload?.newName });
+      return { success: false, error: message };
+    }
+  }
+);
 
 app.whenReady().then(() => {
-    winmain = createWindow("winmain");
-    // induláskor start, minden workernek adunk delayMs-t a timed push-hoz (skeleton)
-    t1.start(1500);
-    t2.start(2500);
-    t3.start(3500);
-
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) winmain = createWindow("winmain");
+    log.info('App started', { version: app.getVersion() });
+    const wmanager = WindowFactory._new();
+    const mainWin = wmanager.createWindow("main");
+    console.log(wmanager.listWindows());
+    mainWin.webContents.once("did-finish-load", () => {
+        mainWin.webContents.send(IpcChannels.WORKER_MESSAGE, {event:"success",payload:"huhuka"});
+        const cfg = UserConfig._new();
+        const ver = cfg.get<string>("version");
+        if (ver) {
+            mainWin.webContents.send(IpcChannels.WORKER_MESSAGE, {event:"info",payload:ver});
+        }else {
+            mainWin.webContents.send(IpcChannels.WORKER_MESSAGE, {event:"error",payload:"unknown version"});
+        }
     });
 });
 
-app.on("window-all-closed", async () => {
-    await Promise.all([t1.stop(), t2.stop(), t3.stop()]);
-    if (process.platform !== "darwin") app.quit();
-});
+// app.on("window-all-closed", async () => {
+//     await Promise.all([t1.stop(), t2.stop(), t3.stop()]);
+//     if (process.platform !== "darwin") app.quit();
+// });
 
-// ---- windows
-ipcMain.handle(IpcChannels.WINDOW_OPEN, (_e, { view }: { view: "win1" | "win2" }) => {
-    if (view === "win1") {
-        if (!win1 || win1.isDestroyed()) win1 = createWindow("win1");
-        else {
-            win1.show();
-            win1.focus();
-        }
-    }
-    if (view === "win2") {
-        if (!win2 || win2.isDestroyed()) win2 = createWindow("win2");
-        else {
-            win2.show();
-            win2.focus();
-        }
-    }
-    return true;
-});
-ipcMain.handle(IpcChannels.WINDOW_FOCUS_OR_CREATE, (_e, { view }: { view: "win1" | "win2" }) => {
-    return ipcMain.emit(IpcChannels.WINDOW_OPEN, _e, { view });
-});
+// // ---- windows
+// ipcMain.handle(IpcChannels.WINDOW_OPEN, (_e, { view }: { view: "win1" | "win2" }) => {
+//     console.log("got window open message", view);
+//     if (view === "win1") {
+//         if (!win1 || win1.isDestroyed()) win1 = createWindow("win1");
+//         else {
+//             win1.show();
+//             win1.focus();
+//         }
+//     }
+//     if (view === "win2") {
+//         if (!win2 || win2.isDestroyed()) win2 = createWindow("win2");
+//         else {
+//             win2.show();
+//             win2.focus();
+//         }
+//     }
+//     return true;
+// });
+// ipcMain.handle(IpcChannels.WINDOW_FOCUS_OR_CREATE, (_e, { view }: { view: "win1" | "win2" }) => {
+//     return ipcMain.emit(IpcChannels.WINDOW_OPEN, _e, { view });
+// });
 
-// ---- push registry (timed push feliratkozás)
-ipcMain.handle(IpcChannels.PUSH_REGISTER, (event, { channel, scope }: { channel: IpcChannels; scope: string }) => {
-    registerPushTarget(channel, scope, event.sender);
-    return true;
-});
-ipcMain.handle(IpcChannels.PUSH_UNREGISTER, (event, { channel, scope }: { channel: IpcChannels; scope: string }) => {
-    unregisterPushTarget(channel, scope, event.sender);
-    return true;
-});
+// // ---- push registry (timed push feliratkozás)
+// ipcMain.handle(IpcChannels.PUSH_REGISTER, (event, { channel, scope }: { channel: IpcChannels; scope: string }) => {
+//     registerPushTarget(channel, scope, event.sender);
+//     return true;
+// });
+// ipcMain.handle(IpcChannels.PUSH_UNREGISTER, (event, { channel, scope }: { channel: IpcChannels; scope: string }) => {
+//     unregisterPushTarget(channel, scope, event.sender);
+//     return true;
+// });
 
-// ---- workers control
-ipcMain.handle(IpcChannels.WORKERS_START_ALL, async () => {
-    t1.start(1500);
-    t2.start(2500);
-    t3.start(3500);
-    return true;
-});
-ipcMain.handle(IpcChannels.WORKERS_STOP_ALL, async () => {
-    await Promise.all([t1.stop(), t2.stop(), t3.stop()]);
-    return true;
-});
+// // ---- workers control
+// ipcMain.handle(IpcChannels.WORKERS_START_ALL, async () => {
+//     t1.start(1500);
+//     t2.start(2500);
+//     t3.start(3500);
+//     return true;
+// });
+// ipcMain.handle(IpcChannels.WORKERS_STOP_ALL, async () => {
+//     await Promise.all([t1.stop(), t2.stop(), t3.stop()]);
+//     return true;
+// });
 
-// ---- RPC request/command skeletons
-ipcMain.handle(IpcChannels.T1_REQUEST, async (_e, { params, scope }: { params: T1RequestParams; scope?: string }) =>
-    t1.request(params, scope)
-);
-ipcMain.handle(IpcChannels.T2_REQUEST, async (_e, { params, scope }: { params: T2RequestParams; scope?: string }) =>
-    t2.request(params, scope)
-);
-ipcMain.handle(IpcChannels.T3_REQUEST, async (_e, { params, scope }: { params: T3RequestParams; scope?: string }) =>
-    t3.request(params, scope)
-);
+// // ---- RPC request/command skeletons
+// ipcMain.handle(IpcChannels.T1_REQUEST, async (_e, { params, scope }: { params: T1RequestParams; scope?: string }) =>
+//     t1.request(params, scope)
+// );
+// ipcMain.handle(IpcChannels.T2_REQUEST, async (_e, { params, scope }: { params: T2RequestParams; scope?: string }) =>
+//     t2.request(params, scope)
+// );
+// ipcMain.handle(IpcChannels.T3_REQUEST, async (_e, { params, scope }: { params: T3RequestParams; scope?: string }) =>
+//     t3.request(params, scope)
+// );
 
-ipcMain.handle(IpcChannels.T1_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
-    t1.command({ command }, scope)
-);
-ipcMain.handle(IpcChannels.T2_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
-    t2.command({ command }, scope)
-);
-ipcMain.handle(IpcChannels.T3_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
-    t3.command({ command }, scope)
-);
+// ipcMain.handle(IpcChannels.T1_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
+//     t1.command({ command }, scope)
+// );
+// ipcMain.handle(IpcChannels.T2_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
+//     t2.command({ command }, scope)
+// );
+// ipcMain.handle(IpcChannels.T3_COMMAND, async (_e, { command, scope }: CommandRequest & { scope?: string }) =>
+//     t3.command({ command }, scope)
+// );
