@@ -1,1 +1,20 @@
-{}
+{
+    "system": {
+        "windows": {
+            "main": {},
+            "config": {}
+        }
+    },
+    "user": {
+        "versions": "1.0.0",
+        "name": "Gerencsér Gabor",
+        "mail": "gabor.gerencser.1@otpbank.hu",
+        "key": "",
+        "slug": "gabor.hu",
+        "git_url": "https://bitbucket.hu/api/1.0/",
+        "repository_folder": "folder",
+        "script_repo": "sm_scripts/priv/rules",
+        "graphql_repo": "sm_datawall_schema/priv",
+        "project_key": "vvv"
+    }
+}

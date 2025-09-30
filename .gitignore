@@ -6,4 +6,10 @@ dist/
 trash
 data
 
+# Test coverage output
+coverage/
+
+# Compiled test artifacts
+tests/**/*.js
+tests/**/*.js.map
 

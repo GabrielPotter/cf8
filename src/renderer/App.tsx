@@ -1,136 +1,115 @@
-import React from "react";
-import { CssBaseline, Container, Box, Stack, Button, Typography, Divider } from "@mui/material";
-import StatusToasts from "./components/StatusToasts";
-import MetricsPanel from "./components/MetricsPanel";
-import SearchPanel from "./components/SearchPanel";
-import ImagePanel from "./components/ImagePanel";
-import { IpcChannels } from "../ipc/channels";
+import React, { useEffect, useState } from "react";
+import { useSnackbar, type VariantType } from "notistack";
+import { IconButton, Box } from "@mui/material";
+import HomeIcon from "@mui/icons-material/Home";
+import ArticleIcon from "@mui/icons-material/Article";
+import SettingsIcon from "@mui/icons-material/Settings";
+import InfoIcon from "@mui/icons-material/Info";
+import PersonIcon from "@mui/icons-material/Person"
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import "../ipc/ipc.d";
+import theme from "./theme";
+import SettingsView from "./views/SettingsView";
+import LogsView from "./views/LogsView";
+import AboutView from "./views/AboutView"
+import AccountView from "./views/AccountView";
+import ExplorerView from "./views/ExplorerView";
+import { rendererLog } from "./logger";
 
-function useView(): "main" | "metrics" | "search" {
-  const [view, setView] = React.useState<"main" | "metrics" | "search">("main");
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const v = (params.get("view") || "main") as "main" | "metrics" | "search";
-    setView(v);
-  }, []);
-  return view;
-}
+type ViewKey = "workspace" |"explorer"| "logs" | "settings" | "about"|"account";
 
-function useScopedPush(view: string) {
-  const scope = `${view}:default`;
-  React.useEffect(() => {
-    // regisztráljuk azokat a push csatornákat, amiket ez a nézet szeretne kapni
-    const regs: Array<Promise<any>> = [];
-    if (view === "metrics" || view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.METRICS_TICK, scope));
-    }
-    if (view === "search" || view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.SEARCH_INDEXED, scope));
-      regs.push(window.api.registerPush(IpcChannels.SEARCH_PROGRESS, scope));
-    }
-    // képek: csak a mainben jelenítjük meg, de mutatom a mintát
-    if (view === "main") {
-      regs.push(window.api.registerPush(IpcChannels.IMAGE_COMPLETED, scope));
-      regs.push(window.api.registerPush(IpcChannels.IMAGE_ERROR, scope));
-    }
-    // cleanup: leiratkozás
-    return () => {
-      if (view === "metrics" || view === "main") {
-        window.api.unregisterPush(IpcChannels.METRICS_TICK, scope);
-      }
-      if (view === "search" || view === "main") {
-        window.api.unregisterPush(IpcChannels.SEARCH_INDEXED, scope);
-        window.api.unregisterPush(IpcChannels.SEARCH_PROGRESS, scope);
-      }
-      if (view === "main") {
-        window.api.unregisterPush(IpcChannels.IMAGE_COMPLETED, scope);
-        window.api.unregisterPush(IpcChannels.IMAGE_ERROR, scope);
-      }
+const WorkspaceContent: React.FC = () => (
+    <PanelGroup direction="horizontal" style={{ height: "100%" }}>
+        <Panel defaultSize={30} minSize={20}>
+            <Box sx={{ backgroundColor: "#295dceff", height: "100%" }} className="panel-left">
+                Left
+            </Box>
+        </Panel>
+        <PanelResizeHandle className="handle" style={{ width: "5px", background: theme.palette.divider }} />
+        <Panel minSize={30}>
+            <Box sx={{ backgroundColor: "#62ca78ff", height: "100%" }} className="panel-mid">
+                Mid
+            </Box>
+        </Panel>
+        <PanelResizeHandle className="handle" style={{ width: "5px", background: theme.palette.grey[300] }} />
+        <Panel defaultSize={30} minSize={20}>
+            <div className="panel-right">Right</div>
+        </Panel>
+    </PanelGroup>
+);
+
+
+
+export const App: React.FC = () => {
+    const { enqueueSnackbar } = useSnackbar();
+    const [activeView, setActiveView] = useState<ViewKey>("workspace");
+
+    useEffect(() => {
+        window.api.workerMessage((event, payload) => {
+            // console.log("...>", event, payload);
+            enqueueSnackbar(`This is a success message: ${payload}`, { variant: event as VariantType });
+        });
+    }, []);
+
+    const handleSelectView = (view: ViewKey) => {
+        setActiveView(view);
+        void rendererLog.info(`View switched to ${view}`);
     };
-  }, [view]);
+    const views: Record<ViewKey, React.ReactNode> = {
+        workspace: <WorkspaceContent />,
+        logs: <LogsView />,
+        settings: <SettingsView />,
+        about: <AboutView />,
+        account: <AccountView/>,
+        explorer:<ExplorerView/>
+    };
 
-  return scope;
-}
-
-const MainLayout: React.FC = () => {
-  const scope = useScopedPush("main");
-  const start = () => window.api.startAllWorkers();
-  const stop = () => window.api.stopAllWorkers();
-  const openMetrics = () => window.api.focusOrCreateWindow("metrics");
-  const openSearch = () => window.api.focusOrCreateWindow("search");
-
-  return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="lg">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>cf8 – Main Window</Typography>
-          <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
-            <Button variant="contained" onClick={start}>Start all workers</Button>
-            <Button variant="outlined" onClick={stop}>Stop all workers</Button>
-            <Button onClick={openMetrics}>Open Metrics Window</Button>
-            <Button onClick={openSearch}>Open Search Window</Button>
-          </Stack>
-
-          <Divider sx={{ my: 2 }} />
-          <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-            <Box flex={1}><MetricsPanel /></Box>
-            <Box flex={1}><SearchPanel /></Box>
-          </Stack>
-
-          <Divider sx={{ my: 2 }} />
-          <ImagePanel />
+    return (
+        <Box sx={{ display: "flex", height: "100vh" }}>
+            <Box
+                sx={{
+                    width: 40,
+                    minWidth: 40,
+                    maxWidth: 40,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center"
+                }}
+            >
+                <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("workspace")}>
+                    <HomeIcon />
+                </IconButton>
+                <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("explorer")}>
+                    <HomeIcon />
+                </IconButton>
+                <Box sx={{ flexGrow: 1 }} />
+                <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("account")}>
+                    <PersonIcon />
+                </IconButton>
+                <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("logs")}>
+                    <ArticleIcon />
+                </IconButton>
+                <IconButton color={activeView === "settings" ? "primary" : "default"} onClick={() => handleSelectView("settings")}>
+                    <SettingsIcon />
+                </IconButton>
+                <IconButton color={activeView === "about" ? "primary" : "default"} onClick={() => handleSelectView("about")}>
+                    <InfoIcon />
+                </IconButton>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0, position: "relative" }}>
+                {(Object.keys(views) as ViewKey[]).map((viewKey) => (
+                    <Box
+                        key={viewKey}
+                        sx={{
+                            display: activeView === viewKey ? "block" : "none",
+                            height: "100%",
+                            width: "100%",
+                        }}
+                    >
+                        {views[viewKey]}
+                    </Box>
+                ))}
+            </Box>
         </Box>
-      </Container>
-      <StatusToasts />
-    </>
-  );
+    );
 };
-
-const MetricsOnlyLayout: React.FC = () => {
-  const scope = useScopedPush("metrics");
-  const start = () => window.api.metricsStart(1000, scope);
-  const stop = () => window.api.metricsStop(scope);
-
-  return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="md">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>Metrics Window</Typography>
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-            <Button variant="contained" onClick={start}>Start metrics</Button>
-            <Button variant="outlined" onClick={stop}>Stop metrics</Button>
-          </Stack>
-          <MetricsPanel />
-        </Box>
-      </Container>
-      <StatusToasts />
-    </>
-  );
-};
-
-const SearchOnlyLayout: React.FC = () => {
-  const scope = useScopedPush("search");
-  return (
-    <>
-      <CssBaseline />
-      <Container maxWidth="md">
-        <Box py={3}>
-          <Typography variant="h5" gutterBottom>Search Window</Typography>
-          <SearchPanel />
-        </Box>
-      </Container>
-      <StatusToasts />
-    </>
-  );
-};
-
-const App: React.FC = () => {
-  const view = useView();
-  if (view === "metrics") return <MetricsOnlyLayout />;
-  if (view === "search") return <SearchOnlyLayout />;
-  return <MainLayout />;
-};
-
-export default App;

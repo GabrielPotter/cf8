@@ -1,36 +1,51 @@
 export enum IpcChannels {
-  // UI
-  UI_TOAST = "ui/toast",
+  // UI (main -> renderer)
+  // UI_TOAST = "ui/toast",
 
-  // Metrics worker
-  METRICS_START = "metrics/start",
-  METRICS_STOP = "metrics/stop",
-  METRICS_GET_SNAPSHOT = "metrics/getSnapshot",
-  METRICS_TICK = "metrics/tick",
+  // Lifecycle push per worker (main -> renderer, csak fő ablak)
+  // T1_LIFECYCLE = "t1/lifecycle",
+  // T2_LIFECYCLE = "t2/lifecycle",
+  // T3_LIFECYCLE = "t3/lifecycle",
 
-  // Search worker
-  SEARCH_INDEX_DOCS = "search/indexDocs",
-  SEARCH_QUERY = "search/query",
-  SEARCH_CLEAR = "search/clear",
-  SEARCH_INDEXED = "search/indexed",
-  SEARCH_PROGRESS = "search/progress",
+  // Timed push per worker (main -> renderer, csak feliratkozóknak)
+  // T1_TIMED = "t1/timed",
+  // T2_TIMED = "t2/timed",
+  // T3_TIMED = "t3/timed",
 
-  // Image worker
-  IMAGE_GENERATE = "image/generate",
-  IMAGE_LIST = "image/list",
-  IMAGE_CLEAR = "image/clear",
-  IMAGE_COMPLETED = "image/completed",
-  IMAGE_ERROR = "image/error",
+  // RPC – request/response per worker (renderer -> main -> worker)
+  // T1_REQUEST = "t1/request",
+  // T2_REQUEST = "t2/request",
+  // T3_REQUEST = "t3/request",
 
-  // Global workers
-  WORKERS_START_ALL = "workers/startAll",
-  WORKERS_STOP_ALL = "workers/stopAll",
+  // Commands per worker (renderer -> main -> worker)
+  // T1_COMMAND = "t1/command",
+  // T2_COMMAND = "t2/command",
+  // T3_COMMAND = "t3/command",
 
-  // Windows
-  WINDOW_OPEN = "window/open",
-  WINDOW_FOCUS_OR_CREATE = "window/focusOrCreate",
+  // Push routing (renderer -> main)
+  // PUSH_REGISTER = "push/register",     // { channel, scope }
+  // PUSH_UNREGISTER = "push/unregister", // { channel, scope }
 
-  // Push routing registry
-  PUSH_REGISTER = "push/register",     // { channel, scope }
-  PUSH_UNREGISTER = "push/unregister", // { channel, scope }
+  // Windows (renderer -> main)
+  // WINDOW_OPEN = "window/open",               // { view: "win1" | "win2" }
+  // WINDOW_FOCUS_OR_CREATE = "window/focusOrCreate",
+
+  // Workers (renderer -> main)
+  // WORKERS_START_ALL = "workers/startAll",
+  // WORKERS_STOP_ALL = "workers/stopAll",
+
+  WORKER_MESSAGE = "worker-message",
+
+  LOGS_READ = "logs/read",
+  LOGS_WRITE = "logs/write",
+
+  ENVIRONMENT_INFO = "environment/info",
+  CONFIG_DUMP = "config/dump",
+  CATALOG_SCAN = "catalog/scan",
+  CATALOG_CREATE_FILE = "catalog/create-file",
+  CATALOG_CREATE_FOLDER = "catalog/create-folder",
+  CATALOG_DELETE_FILE = "catalog/delete-file",
+  CATALOG_DELETE_FOLDER = "catalog/delete-folder",
+  CATALOG_RENAME_FILE = "catalog/rename-file",
+  CATALOG_RENAME_FOLDER = "catalog/rename-folder",
 }

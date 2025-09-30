@@ -6,9 +6,9 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AccountCircle from "@mui/icons-material/AccountCircle"
 import TuneIcon from "@mui/icons-material/Tune";
-import type { ViewId } from "../../shared/types"
+//import type { ViewId } from "../../shared/types"
 
-type Item = { id: ViewId; label: string; icon: React.ReactNode };
+type Item = { id: string; label: string; icon: React.ReactNode };
 
 const TOP_ITEMS: Item[] = [
   { id: "explorer", label: "Explorer", icon: <FolderIcon /> },
@@ -23,8 +23,8 @@ const BOTTOM_ITEMS: Item[] = [
 ];
 
 export interface ActivityBarProps {
-  active: ViewId;
-  onSelect: (id: ViewId) => void;
+  active: string;
+  onSelect: (id: string) => void;
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({ active, onSelect }) => {
