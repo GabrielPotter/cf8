@@ -1,15 +1,17 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
 import { IpcChannels } from "./ipc/channels";
 //import { T1Client, T2Client, T3Client, registerPushTarget, unregisterPushTarget } from "./workers/workerClients";
 //import type { T1RequestParams, T2RequestParams, T3RequestParams, CommandRequest } from "./ipc/protocol";
 import { SystemConfig } from "./common/system-config";
 import { UserConfig } from "./common/user-config";
 import { WindowFactory } from "./windows/window-factory";
-import log from "electron-log"
+import log from "electron-log";
 import { isRendererLogLevel } from "./common/logging";
 import { environmentInfo } from "./workers/environmentInfo";
 import { catalogScanner } from "./workers/catalogScanner";
+import { objectScanner } from "./workers/objectScanner";
 
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "true";
 
@@ -50,6 +52,69 @@ ipcMain.handle(
       const errMessage = error instanceof Error ? error.message : String(error);
       log.error("Failed to write renderer log", errMessage, { payload });
       return { success: false, error: errMessage };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.DATA_READ_JSON,
+  async (_event, payload: { filePath: string }) => {
+    const relativePath = payload?.filePath ?? "";
+    try {
+      if (!relativePath) {
+        throw new Error("File path is required");
+      }
+      if (path.isAbsolute(relativePath)) {
+        throw new Error("Path must be relative to the assets directory");
+      }
+
+      const assetsDir = path.join(app.getAppPath(), "assets");
+      const resolvedPath = path.resolve(assetsDir, relativePath);
+      const relativeToAssets = path.relative(assetsDir, resolvedPath);
+      if (relativeToAssets.startsWith("..") || path.isAbsolute(relativeToAssets)) {
+        throw new Error("Invalid file path");
+      }
+
+      const fileContent = await readFile(resolvedPath, "utf8");
+      return JSON.parse(fileContent) as unknown;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to read JSON data", message, { filePath: relativePath });
+      throw error;
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.OBJECTS_LIST,
+  async (_event, payload: { rootPath?: string }) => {
+    try {
+      const items = await objectScanner.listObjects(payload?.rootPath);
+      return { success: true, items };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to list object catalog", message, { rootPath: payload?.rootPath });
+      return { success: false, error: message };
+    }
+  }
+);
+
+ipcMain.handle(
+  IpcChannels.OBJECTS_WRITE,
+  async (_event, payload: { fullPath: string; data: unknown }) => {
+    const fullPath = payload?.fullPath;
+    try {
+      if (!fullPath) {
+        throw new Error("File path is required");
+      }
+      const resolvedPath = path.resolve(fullPath);
+      const json = JSON.stringify(payload?.data ?? null, null, 2);
+      await writeFile(resolvedPath, `${json}\n`, "utf8");
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("Failed to write object catalog file", message, { fullPath });
+      return { success: false, error: message };
     }
   }
 );
@@ -220,7 +285,7 @@ app.whenReady().then(() => {
 //     return ipcMain.emit(IpcChannels.WINDOW_OPEN, _e, { view });
 // });
 
-// // ---- push registry (timed push feliratkozás)
+// // ---- push registry (timed push subscriptions)
 // ipcMain.handle(IpcChannels.PUSH_REGISTER, (event, { channel, scope }: { channel: IpcChannels; scope: string }) => {
 //     registerPushTarget(channel, scope, event.sender);
 //     return true;

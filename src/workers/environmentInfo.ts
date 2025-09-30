@@ -57,7 +57,7 @@ export type EnvironmentSnapshot = {
 };
 
 /**
- * Singleton osztály a futási környezet metaadatainak lekérdezésére.
+ * Singleton class for retrieving runtime environment metadata.
  */
 export class EnvironmentInfo {
     private static instance: EnvironmentInfo | null = null;
@@ -181,7 +181,7 @@ export class EnvironmentInfo {
 
     private hasDockerEnv(): boolean {
         try {
-            // A /proc/1/cgroup ellenőrzése gyorsan jelzi a konténeres környezetet.
+            // Checking /proc/1/cgroup is a quick signal for containerized environments.
             const fs = require("node:fs") as typeof import("node:fs");
             const content = fs.readFileSync("/proc/1/cgroup", "utf8");
             return /docker|kubepods|containerd/i.test(content);

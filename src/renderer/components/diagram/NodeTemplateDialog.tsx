@@ -23,7 +23,7 @@ function TemplateIcon({ kind }: { kind: "sum" | "db" | "gear" | "cloud" }) {
 export type NodeTemplateDialogProps = {
   open: boolean;
   templates: NodeTemplate[];
-  editors?: TemplateEditorsMap; // 👈 opcionális, templateId->Editor
+  editors?: TemplateEditorsMap; // optional, templateId -> Editor
   onClose: () => void;
   onCreate: (args: { name: string; template: NodeTemplate; extraData?: Record<string, unknown> }) => void;
 };
@@ -44,7 +44,7 @@ export default function NodeTemplateDialog({ open, onClose, onCreate, templates,
 
   const handlePick = (t: NodeTemplate) => {
     setTpl(t);
-    setExtraData({ ...(t.extraDefault ?? {}) }); // alap extra a szerkesztő kiindulópontja
+    setExtraData({ ...(t.extraDefault ?? {}) }); // base extra is the editor's starting point
   };
 
   const handleCreate = () => {

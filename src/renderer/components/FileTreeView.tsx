@@ -654,11 +654,11 @@ export const FileTreeView: React.FC<FileTreeViewProps> = ({ root, onSelect, onRe
                 {root ? (
                     <SimpleTreeView
                         expandedItems={expandedItems}
-                        onExpandedItemsChange={(event, itemIds) => setExpandedItems(itemIds)}
-                        selectedItems={selectedItemId ? [selectedItemId] : []}
-                        onSelectedItemsChange={(_event, itemIds) => {
-                            const next = itemIds[itemIds.length - 1] ?? null;
-                            setSelectedItemId(next ?? null);
+                        onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+                        selectedItems={selectedItemId ?? null}
+                        onSelectedItemsChange={(_event, itemId) => {
+                            const next = itemId ?? null;
+                            setSelectedItemId(next);
                             const node = next ? findNodeByPath(root, next) : null;
                             setActiveDirectory(node ? getDirectoryForNode(node) : root ? getDirectoryForNode(root) : null);
                             if (node && onSelect) {

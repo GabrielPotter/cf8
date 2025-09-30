@@ -25,7 +25,7 @@ import AddIcon from "@mui/icons-material/Add";                    // array/objec
 import ClearIcon from "@mui/icons-material/Clear";                // array clear
 import RemoveIcon from "@mui/icons-material/Remove";              // delete (array elem / optional prop)
 
-/* ---------- Típusok ---------- */
+/* ---------- Types ---------- */
 
 export type JSONSchema =
   | {
@@ -58,13 +58,13 @@ export interface PropertyGridProps {
   schema?: JSONSchema;
   onChange?: (next: any) => void;
   readOnly?: boolean;
-  /** hide = ikonok eltűnnek, disable = ikonok látszanak, de tiltva */
+  /** hide = icons disappear, disable = icons visible but disabled */
   readOnlyControlsMode?: "hide" | "disable";
   dense?: boolean;
   summaryMaxLen?: number;
   expanderColWidth?: number;
   titleColWidth?: number | string;
-  /** MUI spacing egység; 1 egység = 8px */
+  /** MUI spacing unit; 1 unit = 8px */
   indentStep?: number;
 
   /** Dinamikus Title-oszlop */
@@ -129,7 +129,7 @@ function updateAtPath(root: any, path: Path, nextValue: any): any {
   return clone;
 }
 
-/** Közös, keret nélküli, egysoros input stílus */
+/** Shared, borderless, single-line input style */
 const compactInputSx = {
   px: 0, py: 0, m: 0,
   "& .MuiInputBase-input, & .MuiSelect-select": {
@@ -137,7 +137,7 @@ const compactInputSx = {
   },
 };
 
-/** ColGroup — egységes oszlopszélességek minden szinten */
+/** ColGroup - consistent column widths at all levels */
 const ColGroup: React.FC<{ expander: number; title: number | string }> = ({ expander, title }) => {
   const titleWidth = typeof title === "number" ? `${title}px` : title;
   return (
@@ -149,7 +149,7 @@ const ColGroup: React.FC<{ expander: number; title: number | string }> = ({ expa
   );
 };
 
-/** Schema bejárás — a leghosszabb title méréséhez (indexek nélkül) */
+/** Walk schema to measure longest title (without indexes) */
 function collectTitlesFromSchema(schema?: JSONSchema): string[] {
   const out: string[] = [];
   const visit = (s?: JSONSchema) => {
@@ -171,7 +171,7 @@ function collectTitlesFromSchema(schema?: JSONSchema): string[] {
   return out;
 }
 
-/** Szöveg px-szélesség mérése canvas-szal a body2 tipográfiával */
+/** Measure text width in px using canvas with body2 typography */
 function measureMaxTitlePx(titles: string[], fontFamily: string, fontSizePx: number, fontWeight?: number | string): number {
   if (titles.length === 0) return 0;
   const canvas = document.createElement("canvas");
@@ -191,7 +191,7 @@ function describeType(schema: JSONSchema | undefined, value: any): string {
   return String(t ?? "unknown");
 }
 
-/** Alapérték új elemhez a schema alapján */
+/** Default value for new items based on schema */
 function defaultForSchema(s?: JSONSchema): any {
   if (!s) return null;
   const t = (s as any).type;
@@ -278,11 +278,11 @@ const ValueEditor: React.FC<ValueEditorProps> = React.memo(({ schema, value, onC
 });
 ValueEditor.displayName = "ValueEditor";
 
-/* ---------- Egy csomópont ---------- */
+/* ---------- Single node ---------- */
 
 interface NodeRowProps {
-  fieldKey: string | number;  // kulcs / index
-  label: string;              // megjelenített címke (schema.title || key)
+  fieldKey: string | number;  // key / index
+  label: string;              // display label (schema.title || key)
   value: any;
   schema?: JSONSchema;
   path: Path;
@@ -319,7 +319,7 @@ const NodeRow: React.FC<NodeRowProps> = ({
   const controlsHidden = !!readOnly && readOnlyControlsMode === "hide";
   const controlsDisabled = !!readOnly && readOnlyControlsMode === "disable";
 
-  // --- OBJECT szint: hiányzó opcionális mezők gyűjtése + hozzáadás menü ---
+  // --- OBJECT level: collect missing optional fields + add menu ---
   const objProps = (schema as any)?.properties ?? {};
   const reqList: string[] = Array.isArray((schema as any)?.required) ? (schema as any)?.required : [];
   const objValue: any = isObjectType ? (isObject(value) ? value : {}) : undefined;
@@ -344,7 +344,7 @@ const NodeRow: React.FC<NodeRowProps> = ({
     closeAddMenu();
   };
 
-  // --- Lista műveletek ---
+  // --- List actions ---
   const handleArrayAdd = (e: React.MouseEvent) => {
     e.stopPropagation(); if (controlsDisabled || readOnly) return;
     const root = valueRootRef.current;
@@ -358,7 +358,7 @@ const NodeRow: React.FC<NodeRowProps> = ({
     onChange?.(updateAtPath(root, path, []));
   };
 
-  // --- Tömb-elem törlése ---
+  // --- Delete array item ---
   const handleDeleteSelfFromArray = (e: React.MouseEvent) => {
     e.stopPropagation(); if (controlsDisabled || !isArrayElement || readOnly) return;
     const root = valueRootRef.current;
@@ -369,8 +369,8 @@ const NodeRow: React.FC<NodeRowProps> = ({
     onChange?.(updateAtPath(root, parentPath, next));
   };
 
-  // --- Opcionális objektum-mező törlése ---
-  const parentIsObject = !isArrayElement && path.length > 0; // root nem mező
+  // --- Delete optional object field ---
+  const parentIsObject = !isArrayElement && path.length > 0; // root is not a field
   const canDeleteOptionalProp = parentIsObject && !isRequired;
   const handleDeleteOptionalProp = (e: React.MouseEvent) => {
     e.stopPropagation(); if (controlsDisabled || !canDeleteOptionalProp || readOnly) return;
@@ -440,7 +440,7 @@ const NodeRow: React.FC<NodeRowProps> = ({
       const obj = objValue ?? {};
       const props = objProps;
       const req = reqList;
-      // csak a meglévő kulcsok + a kötelezők jelennek meg
+      // show only existing keys plus required keys
       const presentKeys = Object.keys(obj);
       const keysToShow = Array.from(new Set<string>([...presentKeys, ...req]));
       children = keysToShow.map((k) => ({
@@ -476,10 +476,10 @@ const NodeRow: React.FC<NodeRowProps> = ({
           )}
         </TableCell>
 
-        {/* Title cella: grid 1fr auto, * jelölés kötelezőnél */}
+        {/* Title cell: grid 1fr auto, required fields marked with * */}
         <TableCell sx={{ p: dense ? 0.5 : 1, verticalAlign: "top", borderRight: 1, borderColor: "divider", minWidth: 0 }}>
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", columnGap: 0.5, minWidth: 0 }}>
-            {/* Bal: cím + * */}
+            {/* Left: title + * */}
             <Tooltip arrow title={titleTooltip}>
               <Box sx={{ display: "inline-flex", alignItems: "center", minWidth: 0, overflow: "hidden" }}>
                 <Typography variant="body2" noWrap sx={{ lineHeight: 1.75, cursor: "help", minWidth: 0 }} title={label}>
@@ -495,10 +495,10 @@ const NodeRow: React.FC<NodeRowProps> = ({
 
             {/* Jobb: ikonok */}
             <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.25, flexShrink: 0, whiteSpace: "nowrap" }} onMouseDown={stop}>
-              {/* OBJECT: hiányzó opcionális mezők hozzáadása (+ menü) */}
+              {/* OBJECT: add missing optional fields (+ menu) */}
               {!controlsHidden && isObjectType && missingOptionalKeys.length > 0 && (
                 <>
-                  <Tooltip title={controlsDisabled ? "" : "Hiányzó opcionális mező hozzáadása"}>
+                  <Tooltip title={controlsDisabled ? "" : "Add missing optional field"}>
                     <span>
                       <IconButton size="small" onClick={openAddMenu} sx={{ p: 0.25 }} disabled={controlsDisabled}>
                         <AddIcon fontSize="small" />
@@ -522,17 +522,17 @@ const NodeRow: React.FC<NodeRowProps> = ({
                 </>
               )}
 
-              {/* ARRAY: elem hozzáadás / lista ürítés */}
+              {/* ARRAY: add item / clear list */}
               {!controlsHidden && isArrayType && (
                 <>
-                  <Tooltip title={controlsDisabled ? "" : "Elem hozzáadása"}>
+                  <Tooltip title={controlsDisabled ? "" : "Add item"}>
                     <span>
                       <IconButton size="small" onClick={handleArrayAdd} sx={{ p: 0.25 }} disabled={controlsDisabled}>
                         <AddIcon fontSize="small" />
                       </IconButton>
                     </span>
                   </Tooltip>
-                  <Tooltip title={controlsDisabled ? "" : "Lista ürítése"}>
+                  <Tooltip title={controlsDisabled ? "" : "Clear list"}>
                     <span>
                       <IconButton size="small" onClick={handleArrayClear} sx={{ p: 0.25 }} disabled={controlsDisabled}>
                         <ClearIcon fontSize="small" />
@@ -542,9 +542,9 @@ const NodeRow: React.FC<NodeRowProps> = ({
                 </>
               )}
 
-              {/* TÖMB-ELEM törlése */}
+              {/* Delete array item */}
               {!controlsHidden && isArrayElement && (
-                <Tooltip title={controlsDisabled ? "" : "Elem törlése"}>
+                <Tooltip title={controlsDisabled ? "" : "Delete item"}>
                   <span>
                     <IconButton size="small" onClick={handleDeleteSelfFromArray} sx={{ p: 0.25 }} disabled={controlsDisabled}>
                       <RemoveIcon fontSize="small" />
@@ -553,9 +553,9 @@ const NodeRow: React.FC<NodeRowProps> = ({
                 </Tooltip>
               )}
 
-              {/* OPCIONÁLIS OBJEKTUM-MEZŐ törlése */}
+              {/* Delete optional object field */}
               {!controlsHidden && canDeleteOptionalProp && (
-                <Tooltip title={controlsDisabled ? "" : "Mező törlése (nem kötelező)"}>
+                <Tooltip title={controlsDisabled ? "" : "Delete field (optional)"}>
                   <span>
                     <IconButton size="small" onClick={handleDeleteOptionalProp} sx={{ p: 0.25 }} disabled={controlsDisabled}>
                       <RemoveIcon fontSize="small" />
@@ -627,7 +627,7 @@ const NodeRow: React.FC<NodeRowProps> = ({
   );
 };
 
-/* ---------- Fő komponens ---------- */
+/* ---------- Main component ---------- */
 
 export const PropertyGrid: React.FC<PropertyGridProps> = ({
   value,
@@ -639,7 +639,7 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({
   summaryMaxLen = 160,
   expanderColWidth = 40,
   titleColWidth = 320,
-  indentStep = 28, // MUI spacing egység (28 -> 224px)
+  indentStep = 28, // MUI spacing unit (28 -> 224px)
   autoTitleWidth = true,
   minTitleColWidth = 160,
   maxTitleColWidth = 640,
@@ -647,7 +647,7 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Dinamikus Title-szélesség (px)
+  // Dynamic title width (px)
   const [autoTitlePx, setAutoTitlePx] = React.useState<number | null>(null);
   React.useEffect(() => {
     if (!autoTitleWidth || !schema) { setAutoTitlePx(null); return; }
@@ -673,7 +673,7 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({
 
   const effectiveTitleColWidth: number | string = autoTitlePx ?? titleColWidth;
 
-  // Mindig egy legfelső szintű sor: a séma title-je, tartalma a teljes objektum
+  // Always a top-level row: schema title, value is the entire object
   const rootLabel = (schema as any)?.title ?? "(root)";
 
   return (

@@ -1,59 +1,21 @@
 import type { Edge, Node, Viewport } from "reactflow";
-import type { DiagramDTO, PortDTO, RectNodeData, PortEdgeData } from "./types";
-
-type SerializedNode = {
-  id: string;
-  type: "rect";
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  title?: string;
-  ports: PortDTO[];
-  meta?: {
-    templateId?: string;
-    iconKind?: RectNodeData["iconKind"];
-    bgTop?: string;
-    bgMiddle?: string;
-    bgBottom?: string;
-    extra?: Record<string, unknown>;
-    [k: string]: unknown;
-  };
-};
-
-type SerializedEdge = {
-  id: string;
-  source: string;
-  target: string;
-  sourceHandle?: string;
-  targetHandle?: string;
-  routing?: "straight" | "bezier" | "orthogonal";
-  color?: string;
-  label?: string;
-  meta?: {
-    templateId?: string;
-    extra?: Record<string, unknown>;
-    [k: string]: unknown;
-  };
-};
-
-type SerializedViewport = { x: number; y: number; zoom: number };
-
-type SerializedDiagram = {
-  version: number;
-  nodes: SerializedNode[];
-  edges: SerializedEdge[];
-  viewport?: SerializedViewport;
-  meta?: Record<string, unknown>;
-};
+import type {
+  DiagramDTO,
+  NodeDTO,
+  EdgeDTO,
+  DiagramViewport,
+  PortDTO,
+  RectNodeData,
+  PortEdgeData,
+} from "./types";
 
 export function exportDiagram(
   nodes: Node<RectNodeData>[],
   edges: Edge<PortEdgeData>[],
   opts?: { version?: number; meta?: Record<string, unknown> }
-): SerializedDiagram {
+): DiagramDTO {
   const version = opts?.version ?? 3;
-  const outNodes: SerializedNode[] = nodes.map((n) => {
+  const outNodes: NodeDTO[] = nodes.map((n) => {
     const d = n.data;
     return {
       id: n.id,
@@ -75,14 +37,14 @@ export function exportDiagram(
     };
   });
 
-  const outEdges: SerializedEdge[] = edges.map((e) => {
+  const outEdges: EdgeDTO[] = edges.map((e) => {
     const ed = (e.data ?? {}) as PortEdgeData;
     return {
       id: e.id,
       source: e.source,
       target: e.target,
-      sourceHandle: e.sourceHandle,
-      targetHandle: e.targetHandle,
+      sourceHandle: e.sourceHandle ?? undefined,
+      targetHandle: e.targetHandle ?? undefined,
       routing: ed.routing,
       color: ed.color,
       label: (e.label as string) ?? ed.label,
@@ -93,7 +55,7 @@ export function exportDiagram(
     };
   });
 
-  const vp: SerializedViewport | undefined = (() => {
+  const vp: DiagramViewport | undefined = (() => {
     const anyWin = window as any;
     if (anyWin && anyWin.__rfViewport) {
       const { x, y, zoom } = anyWin.__rfViewport as Viewport;
@@ -105,7 +67,7 @@ export function exportDiagram(
   return { version, nodes: outNodes, edges: outEdges, viewport: vp, meta: opts?.meta ?? {} };
 }
 
-export function importDiagram(dto: SerializedDiagram): {
+export function importDiagram(dto: DiagramDTO): {
   nodes: Node<RectNodeData>[];
   edges: Edge<PortEdgeData>[];
   viewport?: Viewport;

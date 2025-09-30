@@ -1,0 +1,26 @@
+{
+  "type": "script",
+  "graph": {
+    "items": [
+      {
+        "name": "step11",
+        "pos_x": 11,
+        "pos_y": 1
+      },
+      {
+        "name": "step22",
+        "pos_x": 21,
+        "pos_y": 22
+      },
+      "tuio",
+      {
+        "name": "kuka",
+        "pos_x": 0,
+        "pos_y": 0
+      }
+    ],
+    "nnn": "ttt"
+  },
+  "name": "huhu",
+  "name2": "bbbb"
+}

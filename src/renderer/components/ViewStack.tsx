@@ -1,6 +1,6 @@
 import React from "react";
 
-/** Keep-alive view stack: minden panel mountolva marad, csak rejtjük a nem aktívakat. */
+/** Keep-alive view stack: all panels stay mounted, non-active ones are hidden. */
 export interface ViewStackProps<T extends string> {
   activeId: T;
   children: Array<{ id: T; node: React.ReactNode }>;

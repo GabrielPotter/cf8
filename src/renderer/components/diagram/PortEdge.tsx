@@ -11,8 +11,11 @@ import SettingsSuggestIcon from "@mui/icons-material/SettingsSuggest";
 import { IconButton, Tooltip } from "@mui/material";
 import type { PortEdgeData } from "./types";
 
-/** Vonalvezetés választó */
-function pathFor(type: string, params: any): [string, number, number] {
+type PathParams = Parameters<typeof getSmoothStepPath>[0];
+type PathResult = ReturnType<typeof getStraightPath>;
+
+/** Route selector */
+function pathFor(type: string, params: PathParams): PathResult {
   switch (type) {
     case "straight":
       return getStraightPath(params);
@@ -24,14 +27,14 @@ function pathFor(type: string, params: any): [string, number, number] {
   }
 }
 
-/** Nyíl méretezés (fele akkora, mint korábban) */
+/** Arrow sizing (half the previous size) */
 const ARROW_W = 6;
 const ARROW_H = 6;
 const REF_Y = ARROW_H / 2;     // 3
-const REF_X = ARROW_W  + 3.0;   // 5.5 – egy picit „ráhúzzuk” a vonalat
+const REF_X = ARROW_W  + 3.0;   // 5.5 - pull the line slightly into the arrow
 
 /**
- * Egyedi élkomponens nyílheggyel + (opcionális) címke + szerkesztés ikon
+ * Custom edge component with arrowhead + (optional) label + edit icon
  */
 export default function PortEdge({
   id,
@@ -55,18 +58,18 @@ export default function PortEdge({
     targetPosition,
   });
 
-  // vonal színe: data.color -> style.stroke -> fallback
+  // Line color: data.color -> style.stroke -> fallback
   const stroke = d.color || (style as any)?.stroke || "#888";
 
-  // csak akkor legyen label konténer, ha van szöveg vagy van editor ikon
+  // Only render label container if there is text or an editor icon
   const showLabel = Boolean((d.label && `${d.label}`.trim().length > 0) || d.templateId);
 
-  // egyedi marker ID minden élhez
+  // Unique marker ID per edge
   const markerId = `edge-arrow-${id}`;
 
   return (
     <>
-      {/* Marker definíció ugyanabban az SVG-ben, ahol a BaseEdge is van */}
+      {/* Marker definition in the same SVG as BaseEdge */}
       <defs>
         <marker
           id={markerId}
@@ -77,12 +80,12 @@ export default function PortEdge({
           orient="auto"
           markerUnits="strokeWidth"
         >
-          {/* Félméretű nyíl: 0,0 → 6,3 → 0,6 */}
+          {/* Half-size arrow: 0,0 -> 6,3 -> 0,6 */}
           <path d={`M0,0 L${ARROW_W},${REF_Y} L0,${ARROW_H} Z`} fill={stroke} />
         </marker>
       </defs>
 
-      {/* Vonal + nyílhegy */}
+      {/* Line + arrowhead */}
       <BaseEdge
         id={id}
         path={edgePath}
@@ -90,7 +93,7 @@ export default function PortEdge({
         markerEnd={`url(#${markerId})`}
       />
 
-      {/* Címke + szerkesztő ikon (ha kell) */}
+      {/* Label + editor icon (if needed) */}
       {showLabel && (
         <EdgeLabelRenderer>
           <div

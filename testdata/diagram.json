@@ -1,0 +1,142 @@
+{
+  "version": 3,
+  "nodes": [
+    {
+      "id": "Nmgdctbh7",
+      "type": "rect",
+      "x": -411,
+      "y": -274,
+      "width": 200,
+      "height": 120,
+      "title": "n1",
+      "ports": [
+        {
+          "id": "Nmgdctbh7-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "IN/LEFT/0"
+        },
+        {
+          "id": "Nmgdctbh7-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "OUT/RIGHT/0"
+        },
+        {
+          "id": "Nmgdctbh7-r-1",
+          "side": "right",
+          "index": 1,
+          "label": "OUT/RIGHT/1"
+        },
+        {
+          "id": "Nmgdctbh7-r-2",
+          "side": "right",
+          "index": 2,
+          "label": "Nmgdctbh7/RIGHT/2"
+        },
+        {
+          "id": "Nmgdctbh7-b-0",
+          "side": "bottom",
+          "index": 0,
+          "label": "Nmgdctbh7/BOTTOM/0"
+        }
+      ],
+      "meta": {
+        "templateId": "slang-intent",
+        "iconKind": "sum",
+        "bgTop": "#1e293b",
+        "bgMiddle": "#0b1220",
+        "bgBottom": "#111827",
+        "extra": {
+          "intentName": "",
+          "trainingPhrases": [],
+          "confidenceThreshold": 0.6,
+          "locale": "en",
+          "projectId": "cf8",
+          "author": "you",
+          "createdAt": 1759647685596
+        }
+      }
+    },
+    {
+      "id": "Nmgdcueoj",
+      "type": "rect",
+      "x": -184,
+      "y": -132,
+      "width": 220,
+      "height": 130,
+      "title": "n2",
+      "ports": [
+        {
+          "id": "Nmgdcueoj-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "IN/LEFT/0"
+        },
+        {
+          "id": "Nmgdcueoj-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "OUT/RIGHT/0"
+        },
+        {
+          "id": "Nmgdcueoj-b-0",
+          "side": "bottom",
+          "index": 0,
+          "label": "ERR/BOTTOM/0"
+        },
+        {
+          "id": "Nmgdcueoj-t-0",
+          "side": "top",
+          "index": 0,
+          "label": "Nmgdcueoj/TOP/0"
+        }
+      ],
+      "meta": {
+        "templateId": "slang-entity",
+        "iconKind": "gear",
+        "bgTop": "#334155",
+        "bgMiddle": "#0f172a",
+        "bgBottom": "#1f2937",
+        "extra": {
+          "entityName": "ra",
+          "patterns": [],
+          "strategy": "lookup",
+          "projectId": "cf8",
+          "author": "you",
+          "createdAt": 1759647685596
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-Nmgdctbh7-Nmgdctbh7-b-0--Nmgdcueoj-Nmgdcueoj-l-0",
+      "source": "Nmgdctbh7",
+      "target": "Nmgdcueoj",
+      "sourceHandle": "Nmgdctbh7-b-0",
+      "targetHandle": "Nmgdcueoj-l-0",
+      "routing": "orthogonal",
+      "meta": {
+        "extra": {}
+      }
+    },
+    {
+      "id": "e-Nmgdctbh7-Nmgdctbh7-r-1--Nmgdcueoj-Nmgdcueoj-t-0",
+      "source": "Nmgdctbh7",
+      "target": "Nmgdcueoj",
+      "sourceHandle": "Nmgdctbh7-r-1",
+      "targetHandle": "Nmgdcueoj-t-0",
+      "routing": "orthogonal",
+      "meta": {
+        "extra": {}
+      }
+    }
+  ],
+  "viewport": {
+    "x": 604,
+    "y": 387,
+    "zoom": 0.8705505632961249
+  },
+  "meta": {}
+}

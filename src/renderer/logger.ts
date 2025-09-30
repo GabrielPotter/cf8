@@ -1,7 +1,8 @@
 import type { RendererLogLevel } from "../common/logging";
 
 const fallback = (level: RendererLogLevel, message: string, args: unknown[]) => {
-  const consoleFn = (console as Record<string, (...p: unknown[]) => void>)[level] ?? console.log;
+  const consoleLike: Partial<Record<RendererLogLevel, (...p: unknown[]) => void>> & Console = console;
+  const consoleFn = consoleLike[level]?.bind(console) ?? console.log.bind(console);
   consoleFn(`[renderer-local] ${message}`, ...args);
 };
 

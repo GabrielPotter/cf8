@@ -12,7 +12,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // ide tehetsz loggolást, telemetry-t stb.
+    // You can add logging/telemetry here if needed.
     // console.error("Renderer error:", error, info);
   }
 

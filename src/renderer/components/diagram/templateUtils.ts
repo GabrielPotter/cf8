@@ -23,7 +23,7 @@ export function createNodeFromTemplate(
   extraData?: Record<string, unknown>
 ): Node<RectNodeData> {
   const persisted: RectNodePersisted = {
-    /** 👇 FONTOS: ebből tudjuk, melyik editor jár a node-hoz */
+    /** Important: this tells us which editor belongs to the node */
     templateId: template.id,
     title,
     width: template.width,

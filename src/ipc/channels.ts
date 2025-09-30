@@ -2,17 +2,17 @@ export enum IpcChannels {
   // UI (main -> renderer)
   // UI_TOAST = "ui/toast",
 
-  // Lifecycle push per worker (main -> renderer, csak fő ablak)
+  // Lifecycle push per worker (main -> renderer, main window only)
   // T1_LIFECYCLE = "t1/lifecycle",
   // T2_LIFECYCLE = "t2/lifecycle",
   // T3_LIFECYCLE = "t3/lifecycle",
 
-  // Timed push per worker (main -> renderer, csak feliratkozóknak)
+  // Timed push per worker (main -> renderer, subscribers only)
   // T1_TIMED = "t1/timed",
   // T2_TIMED = "t2/timed",
   // T3_TIMED = "t3/timed",
 
-  // RPC – request/response per worker (renderer -> main -> worker)
+  // RPC - request/response per worker (renderer -> main -> worker)
   // T1_REQUEST = "t1/request",
   // T2_REQUEST = "t2/request",
   // T3_REQUEST = "t3/request",
@@ -38,6 +38,9 @@ export enum IpcChannels {
 
   LOGS_READ = "logs/read",
   LOGS_WRITE = "logs/write",
+  DATA_READ_JSON = "data/read-json",
+  OBJECTS_LIST = "objects/list",
+  OBJECTS_WRITE = "objects/write",
 
   ENVIRONMENT_INFO = "environment/info",
   CONFIG_DUMP = "config/dump",

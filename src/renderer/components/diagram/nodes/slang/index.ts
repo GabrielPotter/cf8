@@ -4,7 +4,7 @@ import EntityEditor from "./EntityEditor";
 import ReplyEditor from "./ReplyEditor";
 import EdgeBasicEditor from "./EdgeBasicEditor";
 
-/** ---- NODE sablonok ---- */
+/** ---- NODE templates ---- */
 export const SLANG_TEMPLATES: NodeTemplate[] = [
   {
     id: "slang-intent",
@@ -67,14 +67,14 @@ export const SLANG_TEMPLATES: NodeTemplate[] = [
   },
 ];
 
-/** ---- NODE editorok ---- */
+/** ---- NODE editors ---- */
 export const SLANG_EDITORS: Record<string, (p: NodeTemplateEditorProps) => JSX.Element> = {
   "slang-intent": IntentEditor,
   "slang-entity": EntityEditor,
   "slang-reply": ReplyEditor,
 };
 
-/** ---- EDGE sablonok (a palettához tartozó él-típusok) ---- */
+/** ---- EDGE templates (edge types for the palette) ---- */
 export const SLANG_EDGE_TEMPLATES: EdgeTemplate[] = [
   {
     id: "slang-basic-edge",
@@ -98,7 +98,7 @@ export const SLANG_EDGE_TEMPLATES: EdgeTemplate[] = [
   },
 ];
 
-/** ---- EDGE editorok ---- */
+/** ---- EDGE editors ---- */
 export const SLANG_EDGE_EDITORS: Record<string, (p: any) => JSX.Element> = {
   "slang-basic-edge": EdgeBasicEditor,
   "slang-straight-blue": EdgeBasicEditor,

@@ -21,6 +21,21 @@ declare global {
                 entries?: Array<{ path: string; lines: string[] }>;
                 error?: string;
             }>;
+            readJsonFromData: (filePath: string) => Promise<unknown>;
+            listObjects: (
+                rootPath?: string
+            ) => Promise<{
+                success: boolean;
+                items?: import("../workers/objectScanner").ObjectFileItem[];
+                error?: string;
+            }>;
+            writeObject: (
+                fullPath: string,
+                data: unknown
+            ) => Promise<{
+                success: boolean;
+                error?: string;
+            }>;
             log: (
                 level: RendererLogLevel,
                 message: string,

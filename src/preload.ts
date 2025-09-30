@@ -14,6 +14,9 @@ const api = {
     });
   },
   readLogs: () => ipcRenderer.invoke(IpcChannels.LOGS_READ),
+  readJsonFromData: (filePath: string) => ipcRenderer.invoke(IpcChannels.DATA_READ_JSON, { filePath }),
+  listObjects: (rootPath?: string) => ipcRenderer.invoke(IpcChannels.OBJECTS_LIST, { rootPath }),
+  writeObject: (fullPath: string, data: unknown) => ipcRenderer.invoke(IpcChannels.OBJECTS_WRITE, { fullPath, data }),
   log: (level: RendererLogLevel, message: string, ...args: unknown[]) =>
     ipcRenderer.invoke(IpcChannels.LOGS_WRITE, { level, message, args }),
   getEnvironmentInfo: () => ipcRenderer.invoke(IpcChannels.ENVIRONMENT_INFO),

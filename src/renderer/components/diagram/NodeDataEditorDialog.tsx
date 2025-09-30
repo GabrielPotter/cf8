@@ -6,9 +6,9 @@ import type { TemplateEditorsMap } from "./palettes";
 export type NodeDataEditorDialogProps = {
   open: boolean;
   title?: string;
-  /** teljes editors map (templateId -> editor) */
+  /** full editors map (templateId -> editor) */
   editors?: TemplateEditorsMap;
-  /** melyik template editorát rendereljük */
+  /** which template editor to render */
   templateId?: string;
   value?: Record<string, unknown>;
   onClose: () => void;

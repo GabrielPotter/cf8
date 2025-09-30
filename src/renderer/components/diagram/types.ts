@@ -32,19 +32,11 @@ export type RectNodeRuntime = {
 
 export type RectNodeData = RectNodePersisted & RectNodeRuntime;
 
-/** #### DIAGRAM DTO */
-export type DiagramDTO = {
-  schemaVersion: number;
-  nodes: any[];
-  edges: any[];
-  viewport?: { x: number; y: number; zoom: number };
-};
-
 /** #### EDGE (persisted + runtime) */
 export type PortEdgeRouting = "straight" | "bezier" | "orthogonal";
 
 export type PortEdgePersisted = {
-  templateId?: string; // edge template kulcs – ha van editor
+  templateId?: string; // edge template key - if an editor exists
   routing: PortEdgeRouting;
   color?: string;
   label?: string;
@@ -58,10 +50,57 @@ export type PortEdgeRuntime = {
 
 export type PortEdgeData = PortEdgePersisted & PortEdgeRuntime;
 
-/** #### NODE/EDGE sablonok és editor-propsok */
+/** #### DIAGRAM DTO */
+export type DiagramViewport = { x: number; y: number; zoom: number };
+
+export type NodeDTO = {
+  id: string;
+  type: "rect";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  title?: string;
+  ports: PortDTO[];
+  meta?: {
+    templateId?: string;
+    iconKind?: RectNodePersisted["iconKind"];
+    bgTop?: string;
+    bgMiddle?: string;
+    bgBottom?: string;
+    extra?: Record<string, unknown>;
+    [k: string]: unknown;
+  };
+};
+
+export type EdgeDTO = {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  routing?: PortEdgeRouting;
+  color?: string;
+  label?: string;
+  meta?: {
+    templateId?: string;
+    extra?: Record<string, unknown>;
+    [k: string]: unknown;
+  };
+};
+
+export type DiagramDTO = {
+  version: number;
+  nodes: NodeDTO[];
+  edges: EdgeDTO[];
+  viewport?: DiagramViewport;
+  meta?: Record<string, unknown>;
+};
+
+/** #### NODE/EDGE templates and editor props */
 export type NodeTemplate = {
-  id: string;                // pl. "slang-intent"
-  label: string;             // UI név
+  id: string;                // e.g. "slang-intent"
+  label: string;             // UI label
   iconKind: RectNodePersisted["iconKind"];
   width: number;
   height: number;
@@ -80,9 +119,9 @@ export type NodeTemplateEditorProps = {
 };
 
 export type EdgeTemplate = {
-  id: string;                // pl. "slang-basic-edge"
-  label: string;             // UI név
-  // vizuális alapok (default értékek új élhez)
+  id: string;                // e.g. "slang-basic-edge"
+  label: string;             // UI label
+  // visual defaults for new edges
   defaults?: {
     routing?: PortEdgeRouting;
     color?: string;

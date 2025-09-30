@@ -33,7 +33,7 @@ export class SystemConfig extends ConfigBase {
         return (v === undefined ? fallback : v) as T | undefined;
     }
 
-    /** Debug: honnan lett betöltve. */
+    /** Debug: source path used for loading. */
     getSourceDir(): string {
         return this.sourcePath;
     }

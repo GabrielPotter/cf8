@@ -25,9 +25,9 @@ export function unitFromPosition(pos: Position): { ux: number; uy: number } {
   }
 }
 
-/** RF labelBgPadding -> CSS padding normalizáló */
+/** RF labelBgPadding -> CSS padding normalizer */
 export function normalizePadding(
-  p: any // EdgeProps["labelBgPadding"] típussal ciklikus import lehet; runtime-safe normalizálás
+  p: any // EdgeProps["labelBgPadding"] would cause a cyclic import; runtime-safe normalization
 ): string | number | undefined {
   if (p == null) return undefined;
   if (typeof p === "number" || typeof p === "string") return p;

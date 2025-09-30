@@ -1,6 +1,6 @@
 import type { NodeTemplate } from "../../types";
 
-/** Példa: „A” készlet – most csak egy minimál sablon, hogy lásd a váltást */
+/** Example: "A" set - minimal template to show the switch */
 export const A_TEMPLATES: NodeTemplate[] = [
   {
     id: "a-basic",

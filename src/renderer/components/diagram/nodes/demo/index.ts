@@ -19,7 +19,7 @@ function genPortsBySideCounts(
   return out;
 }
 
-/** DEMO sablonkészlet */
+/** DEMO template set */
 export const DEMO_TEMPLATES: NodeTemplate[] = [
   {
     id: "sum-io",
@@ -87,5 +87,5 @@ export const DEMO_TEMPLATES: NodeTemplate[] = [
   },
 ];
 
-/** Helper: opcionális explicit port-lista generálás – itt most csak a counts-os definíciót használjuk. */
+/** Helper: optional explicit port list generation - here we only use the counts-based definition. */
 export { genPortsBySideCounts };

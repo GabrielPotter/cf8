@@ -34,10 +34,10 @@ html, body, #root { height: 100%; }
 }
 
 .cm-scroller {
-  /* kényszerített monospace, hogy minden karakter (pl. {}) biztosan jól renderelődjön */
+  /* Force monospace so every character (e.g. {}) renders reliably */
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "DejaVu Sans Mono", "Ubuntu Mono", "Courier New", monospace !important;
 }
 .cm-content {
-  font-variant-ligatures: none; /* ligatúrák ki, nehogy eltűnjön bármelyik jel */
+  font-variant-ligatures: none; /* disable ligatures so no glyph disappears */
 }

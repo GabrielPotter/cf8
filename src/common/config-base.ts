@@ -13,7 +13,7 @@ export abstract class ConfigBase {
     }
     protected static tokenize(path: string): string[] {
         // aa.bb[0].c  =>  ["aa","bb","0","c"]
-        // Egyszerű tokenizer: pontot szeletel, a [index]-et számmá teszi
+        // Simple tokenizer: split on dots, convert [index] to a numeric token
         const out: string[] = [];
         const parts = path.split(".");
         for (const p of parts) {
@@ -30,7 +30,7 @@ export abstract class ConfigBase {
     protected static getByPath<T = unknown>(obj: any, path: string): T | undefined {
         if (path === "/" || path === ".") return obj;
         const dottedPath = path.replace("/", ".");
-        // pl. "aa.bb[0].c" -> ["aa","bb","0","c"]
+        // e.g. "aa.bb[0].c" -> ["aa","bb","0","c"]
         const tokens = this.tokenize(dottedPath);
         let cur: any = obj;
         for (const t of tokens) {

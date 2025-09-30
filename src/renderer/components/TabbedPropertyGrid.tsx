@@ -18,35 +18,35 @@ import CodeMirror from "@uiw/react-codemirror";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
 import { json} from "@codemirror/lang-json";
 
-// KIZÁRÓLAG EZT AZ IMPORTOT HASZNÁLJUK: a PropertyGrid és a JSONSchema típust innen vesszük
+// Use only this import: PropertyGrid and JSONSchema come from here.
 import { PropertyGrid, JSONSchema } from "./PropertyGrid";
 
 export type TabbedPropertyGridProps = {
-  /** Kezdő JSON adat */
+  /** Initial JSON data */
   data: any;
-  /** A JSON-hoz tartozó séma */
+  /** Schema for the JSON */
   schema: JSONSchema;
-  /** Csak olvasás (PropertyGrid + Editor is read-only) */
+  /** Read-only (PropertyGrid + editor are read-only) */
   readOnly?: boolean;
-  /** Akkor hívjuk, ha bármelyik tartalom (data/schema) érvényesen megváltozott */
+  /** Called when any content (data/schema) changes validly */
   onChange?: (next: { data: any; schema: JSONSchema }) => void;
-  /** Opcionális: kezdeti aktív fül */
+  /** Optional: initial active tab */
   initialTab?: "grid" | "data" | "schema";
-  /** Magasság; alapértelmezés: 100% */
+  /** Height; default: 100% */
   height?: string | number;
 };
 
 /**
- * Háromfüles panel:
- *  - Property Grid: az adat űrlapos nézete a sémával
+ * Three-tab panel:
+ *  - Property Grid: form view of data with schema
  *  - Data JSON Editor
  *  - Schema JSON Editor
- * A komponens szinkronban tartja a három nézetet, és JSON hibákat barátságosan jelzi.
+ * Keeps all three views in sync and surfaces JSON errors clearly.
  *
- * SCROLL FIXEK:
- *  - A CodeMirror köré tettünk egy wrappert, ami 100% magasságú, és a belső .cm-editor-t is 100%-ra húzza.
- *  - A .cm-scroller kifejezetten overflow:auto, így mind vertikális, mind horizontális scroll működik.
- *  - A basicSetup-ben a lineWrapping: false, hogy legyen vízszintes scrollbar hosszú soroknál.
+ * SCROLL FIXES:
+ *  - Wrap CodeMirror to 100% height and force .cm-editor to 100%.
+ *  - .cm-scroller uses overflow:auto to enable both vertical and horizontal scroll.
+ *  - Disable lineWrapping in basicSetup so long lines can scroll horizontally.
  */
 const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
   data,
@@ -60,17 +60,17 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
 
   const [tab, setTab] = useState<TabKey>(initialTab);
 
-  // Objektum állapot és a hozzá tartozó szöveges (JSON) reprezentáció
+  // Object state and its text (JSON) representation
   const [dataObj, setDataObj] = useState<any>(data);
   const [schemaObj, setSchemaObj] = useState<JSONSchema>(schema);
   const [dataText, setDataText] = useState<string>(() => pretty(data));
   const [schemaText, setSchemaText] = useState<string>(() => pretty(schema));
 
-  // Hibák az editorokhoz
+  // Editor errors
   const [dataError, setDataError] = useState<string | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
 
-  // Külső prop-változás követése (pl. szülő frissíti a data/scheme-et)
+  // Track external prop changes (e.g. parent updates data/schema)
   useEffect(() => {
     setDataObj(data);
     setDataText(pretty(data));
@@ -81,7 +81,7 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
     setSchemaText(pretty(schema));
   }, [schema]);
 
-  // onChange trigger egy helyen, hogy a hívó fél is értesüljön
+  // Central onChange trigger so callers get updates
   const emitChange = useCallback(
     (nextData: any, nextSchema: JSONSchema) => {
       onChange?.({ data: nextData, schema: nextSchema });
@@ -89,7 +89,7 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
     [onChange]
   );
 
-  // Data JSON szerkesztése
+  // Edit Data JSON
   const handleDataTextChange = useCallback(
     (nextText: string) => {
       setDataText(nextText);
@@ -105,7 +105,7 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
     [schemaObj, emitChange]
   );
 
-  // Schema JSON szerkesztése
+  // Edit Schema JSON
   const handleSchemaTextChange = useCallback(
     (nextText: string) => {
       setSchemaText(nextText);
@@ -121,7 +121,7 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
     [dataObj, emitChange]
   );
 
-  // PropertyGrid változás (form szerkesztés)
+  // PropertyGrid changes (form edit)
   const handleGridChange = useCallback(
     (next: any) => {
       setDataObj(next);
@@ -132,7 +132,7 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
     [schemaObj, emitChange]
   );
 
-  // Eszköztár akciók
+  // Toolbar actions
   const copyData = useCallback(() => navigator.clipboard?.writeText(dataText), [dataText]);
   const copySchema = useCallback(() => navigator.clipboard?.writeText(schemaText), [schemaText]);
   const prettyData = useCallback(() => setDataText(prettySafe(dataText)), [dataText]);
@@ -201,10 +201,10 @@ const TabbedPropertyGrid: React.FC<TabbedPropertyGridProps> = ({
 
 export default TabbedPropertyGrid;
 
-// === Segéd komponensek ===
+// === Helper components ===
 
 const TabPanel: React.FC<React.PropsWithChildren<{}>> = ({ children }) => (
-  <Box sx={{ flex: 1, minHeight: 0 /* fontos: hogy a CodeMirror jól méretezzen */ }}>
+  <Box sx={{ flex: 1, minHeight: 0 /* important for CodeMirror sizing */ }}>
     {children}
   </Box>
 );
@@ -258,7 +258,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
           </Tooltip>
         </Toolbar>
 
-        {/* SCROLL FIX: a wrappert 100%-ra húzzuk, és a CodeMirror belső scrollerét engedjük görgetni */}
+        {/* SCROLL FIX: 100% wrapper height and allow the internal scroller to scroll */}
         <Box
           sx={{
             flex: 1,
@@ -291,7 +291,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   );
 };
 
-// === segéd függvények ===
+// === Helper functions ===
 function pretty(value: any): string {
   try {
     return JSON.stringify(value, null, 2);
@@ -305,6 +305,6 @@ function prettySafe(currentText: string): string {
     const parsed = JSON.parse(currentText);
     return JSON.stringify(parsed, null, 2);
   } catch {
-    return currentText; // ha nem érvényes JSON, nem bántjuk
+    return currentText; // If JSON is invalid, leave it as-is.
   }
 }

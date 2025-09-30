@@ -1,8 +1,8 @@
 import * as React from "react";
-import { Menu, MenuItem, ListItemText, Divider } from "@mui/material";
+import { Menu, MenuItem, ListItemText, Divider, type PopoverProps } from "@mui/material";
 import type { Direction, PortDTO, PortEdgeRouting } from "./types";
 
-type AnchorEl = HTMLElement | null;
+type AnchorEl = PopoverProps["anchorEl"];
 
 export function NodeContextMenu(props: {
   anchorEl: AnchorEl;

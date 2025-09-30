@@ -1,6 +1,6 @@
 import type { NodeTemplate } from "../../types";
 
-/** Példa: „B” készlet – más méretezés/ikon */
+/** Example: "B" set - different sizing/icon */
 export const B_TEMPLATES: NodeTemplate[] = [
   {
     id: "b-service",

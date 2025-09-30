@@ -5,7 +5,11 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArticleIcon from "@mui/icons-material/Article";
 import SettingsIcon from "@mui/icons-material/Settings";
 import InfoIcon from "@mui/icons-material/Info";
-import PersonIcon from "@mui/icons-material/Person"
+import PersonIcon from "@mui/icons-material/Person";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import TuneIcon from "@mui/icons-material/Tune";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import "../ipc/ipc.d";
 import theme from "./theme";
@@ -14,9 +18,13 @@ import LogsView from "./views/LogsView";
 import AboutView from "./views/AboutView"
 import AccountView from "./views/AccountView";
 import ExplorerView from "./views/ExplorerView";
+import ObjectView from "./views/ObjectView";
+import FlowView from "./views/FlowView";
+import DiagramTestView from "./views/DiagramTestView";
 import { rendererLog } from "./logger";
+import PropsTestView from "./views/PropsTestView";
 
-type ViewKey = "workspace" |"explorer"| "logs" | "settings" | "about"|"account";
+type ViewKey = "workspace" |"explorer"| "objs" |"logs" | "settings" | "about"|"account" | "flow" | "props" ;
 
 const WorkspaceContent: React.FC = () => (
     <PanelGroup direction="horizontal" style={{ height: "100%" }}>
@@ -61,7 +69,10 @@ export const App: React.FC = () => {
         settings: <SettingsView />,
         about: <AboutView />,
         account: <AccountView/>,
-        explorer:<ExplorerView/>
+        explorer:<ExplorerView/>,
+        objs:<ObjectView/>,
+        flow:<DiagramTestView/>,
+        props:<PropsTestView/>
     };
 
     return (
@@ -79,11 +90,20 @@ export const App: React.FC = () => {
                 <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("workspace")}>
                     <HomeIcon />
                 </IconButton>
-                <IconButton color={activeView === "workspace" ? "primary" : "default"} onClick={() => handleSelectView("explorer")}>
-                    <HomeIcon />
+                <IconButton color={activeView === "explorer" ? "primary" : "default"} onClick={() => handleSelectView("explorer")}>
+                    <FolderOpenIcon />
+                </IconButton>
+                 <IconButton color={activeView === "objs" ? "primary" : "default"} onClick={() => handleSelectView("objs")}>
+                    <DataObjectIcon />
+                </IconButton>
+                 <IconButton color={activeView === "flow" ? "primary" : "default"} onClick={() => handleSelectView("flow")}>
+                    <AccountTreeIcon />
+                </IconButton>
+                 <IconButton color={activeView === "props" ? "primary" : "default"} onClick={() => handleSelectView("props")}>
+                    <TuneIcon />
                 </IconButton>
                 <Box sx={{ flexGrow: 1 }} />
-                <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("account")}>
+                <IconButton color={activeView === "account" ? "primary" : "default"} onClick={() => handleSelectView("account")}>
                     <PersonIcon />
                 </IconButton>
                 <IconButton color={activeView === "logs" ? "primary" : "default"} onClick={() => handleSelectView("logs")}>

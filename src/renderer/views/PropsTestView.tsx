@@ -13,10 +13,10 @@ const PropsTestView: React.FC = () => {
    React.useEffect(() => {
         (async () => {
             try {
-                const s = await window.api.readJsonFromData("sample.schema.json");
-                const d = await window.api.readJsonFromData("sample.data.json");
-                setSchema(s);
-                setData(d);
+                const schemaJson = (await window.api.readJsonFromData("schemas/schema1.schema.json")) as JSONSchema;
+                const dataJson = await window.api.readJsonFromData("data/data1.json");
+                setSchema(schemaJson);
+                setData(dataJson);
             } catch (e) {
                 console.error("Failed to load sample data:", e);
             }
@@ -44,7 +44,7 @@ const PropsTestView: React.FC = () => {
             schema={schema}
             readOnly={readOnly}
             onChange={({ data: d, schema: s }) => {
-              // Tesztnézetben is szinkronban tartjuk a lokális állapotot
+              // Keep local state in sync even in the test view.
               setData(d);
               setSchema(s);
             }}

@@ -1,0 +1,185 @@
+{
+  "version": 3,
+  "nodes": [
+    {
+      "id": "Nmimzl1ct",
+      "type": "rect",
+      "x": -1099,
+      "y": -523,
+      "width": 200,
+      "height": 120,
+      "title": "ff",
+      "ports": [
+        {
+          "id": "Nmimzl1ct-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "IN/LEFT/0"
+        },
+        {
+          "id": "Nmimzl1ct-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "OUT/RIGHT/0"
+        },
+        {
+          "id": "Nmimzl1ct-r-1",
+          "side": "right",
+          "index": 1,
+          "label": "OUT/RIGHT/1"
+        }
+      ],
+      "meta": {
+        "templateId": "slang-intent",
+        "iconKind": "sum",
+        "bgTop": "#1e293b",
+        "bgMiddle": "#0b1220",
+        "bgBottom": "#111827",
+        "extra": {
+          "intentName": "",
+          "trainingPhrases": [],
+          "confidenceThreshold": 0.6,
+          "locale": "en",
+          "projectId": "cf8",
+          "author": "you",
+          "createdAt": 1764583703944
+        }
+      }
+    },
+    {
+      "id": "Nmimzle50",
+      "type": "rect",
+      "x": -1266,
+      "y": -675,
+      "width": 220,
+      "height": 130,
+      "title": "zz",
+      "ports": [
+        {
+          "id": "Nmimzle50-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "IN/LEFT/0"
+        },
+        {
+          "id": "Nmimzle50-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "OUT/RIGHT/0"
+        },
+        {
+          "id": "Nmimzle50-b-0",
+          "side": "bottom",
+          "index": 0,
+          "label": "ERR/BOTTOM/0"
+        }
+      ],
+      "meta": {
+        "templateId": "slang-entity",
+        "iconKind": "gear",
+        "bgTop": "#334155",
+        "bgMiddle": "#0f172a",
+        "bgBottom": "#1f2937",
+        "extra": {
+          "entityName": "",
+          "patterns": [],
+          "strategy": "regex",
+          "projectId": "cf8",
+          "author": "you",
+          "createdAt": 1764583703944
+        }
+      }
+    },
+    {
+      "id": "Nmimznamm",
+      "type": "rect",
+      "x": -794,
+      "y": -476,
+      "width": 200,
+      "height": 120,
+      "title": "zzz",
+      "ports": [
+        {
+          "id": "Nmimznamm-l-0",
+          "side": "left",
+          "index": 0,
+          "label": "IN/LEFT/0"
+        },
+        {
+          "id": "Nmimznamm-l-1",
+          "side": "left",
+          "index": 1,
+          "label": "IN/LEFT/1"
+        },
+        {
+          "id": "Nmimznamm-r-0",
+          "side": "right",
+          "index": 0,
+          "label": "OUT/RIGHT/0"
+        }
+      ],
+      "meta": {
+        "templateId": "slang-reply",
+        "iconKind": "cloud",
+        "bgTop": "#1f3a8a",
+        "bgMiddle": "#172554",
+        "bgBottom": "#0b2440",
+        "extra": {
+          "text": "OK",
+          "tone": "neutral",
+          "language": "en",
+          "projectId": "cf8",
+          "author": "you",
+          "createdAt": 1764583703944
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-Nmimzle50-Nmimzle50-b-0--Nmimzl1ct-Nmimzl1ct-l-0",
+      "source": "Nmimzle50",
+      "target": "Nmimzl1ct",
+      "sourceHandle": "Nmimzle50-b-0",
+      "targetHandle": "Nmimzl1ct-l-0",
+      "routing": "orthogonal",
+      "meta": {
+        "extra": {}
+      }
+    },
+    {
+      "id": "e-Nmimzle50-Nmimzle50-r-0--Nmimzl1ct-Nmimzl1ct-r-0",
+      "source": "Nmimzle50",
+      "target": "Nmimzl1ct",
+      "sourceHandle": "Nmimzle50-r-0",
+      "targetHandle": "Nmimzl1ct-r-0",
+      "routing": "orthogonal",
+      "meta": {
+        "extra": {}
+      }
+    },
+    {
+      "id": "e-Nmimzl1ct-Nmimzl1ct-r-1--Nmimznamm-Nmimznamm-l-1",
+      "source": "Nmimzl1ct",
+      "target": "Nmimznamm",
+      "sourceHandle": "Nmimzl1ct-r-1",
+      "targetHandle": "Nmimznamm-l-1",
+      "routing": "orthogonal",
+      "color": "#888",
+      "label": "ttt",
+      "meta": {
+        "templateId": "slang-basic-edge",
+        "extra": {
+          "label": "ttt",
+          "routing": "orthogonal"
+        }
+      }
+    }
+  ],
+  "viewport": {
+    "x": 1985,
+    "y": 1059,
+    "zoom": 1.479482893020875
+  },
+  "meta": {}
+}

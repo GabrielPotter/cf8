@@ -1,0 +1,77 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+    "title": "Person",
+    "type": "object",
+    "properties": {
+        "firstName": {
+            "type": "string",
+            "description": "The person's first name."
+        },
+        "lastName": {
+            "type": "string",
+            "description": "The person's last name."
+        },
+        "age": {
+            "description": "Age in years which must be equal to or greater than zero.",
+            "type": "integer",
+            "minimum": 0
+        },
+        "addresses": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "streetAddress": {
+                        "type": "string"
+                    },
+                    "city": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "postalCode": {
+                        "type": "string",
+                        "pattern": "^[0-9]{5}(-[0-9]{4})?$"
+                    }
+                }
+            }
+        },
+        "param1": {
+            "type": "object",
+            "properties": {
+                "data1":{
+                    "type":"string"
+                },
+                "data2":{
+                    "type":"string",
+                    "description": "description",
+                    "examples": ["huhu","haha"]
+                }
+            }
+        }
+    },
+    "required": ["firstName", "lastName"],
+    "definitions": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "streetAddress": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "postalCode": {
+                    "type": "string",
+                    "pattern": "^[0-9]{5}(-[0-9]{4})?$"
+                }
+            },
+            "required": ["streetAddress", "city", "state", "postalCode"]
+        }
+    }
+}

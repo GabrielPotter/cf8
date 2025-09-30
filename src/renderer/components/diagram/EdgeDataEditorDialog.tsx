@@ -6,7 +6,7 @@ import type { TemplateEditorsMap } from "./palettes";
 export type EdgeDataEditorDialogProps = {
   open: boolean;
   title?: string;
-  editors?: TemplateEditorsMap;     // templateId -> editor komponens
+  editors?: TemplateEditorsMap;     // templateId -> editor component
   templateId?: string;
   value?: Record<string, unknown>;
   onClose: () => void;

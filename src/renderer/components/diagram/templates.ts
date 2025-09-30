@@ -26,7 +26,7 @@ function genPortsBySideCounts(
   return out;
 }
 
-/** Előre definiált node sablonok */
+/** Predefined node templates */
 export const NODE_TEMPLATES: NodeTemplate[] = [
   {
     id: "sum-io",
@@ -90,7 +90,7 @@ export const NODE_TEMPLATES: NodeTemplate[] = [
   },
 ];
 
-/** Sablon alapján node példányosítása */
+/** Instantiate a node from a template */
 export function createNodeFromTemplate(
   template: NodeTemplate,
   id: string,
@@ -116,7 +116,7 @@ export function createNodeFromTemplate(
     data: {
       ...persisted,
       activeSource: null,
-      // interaktorokat a szerkesztő fűzi be
+      // Interactors are added by the editor
     },
   };
 }
